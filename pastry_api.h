@@ -17,6 +17,7 @@ class Pastry_api {
 
 	public:
 
+	void init();
 	void recv_overlay_thread();
 	void recv_user_thread();
 
