@@ -30,13 +30,16 @@ class Socket_layer {
 	//total number of nodes in pastry net 
 	int total_nodes;
 	int cur_node_id;
-
+	//This mutex is for data structures
 	std::mutex socket_mutex;
 	//ip and port of all nodes in the pastry net as a map with node id as key
-	std::map<int,std::string> ip_list;
-	std::map<int,int> port_list;
+	std::map<int,std::string> ip_list;//ip_list will map node_id corresponding to ip
+	std::map<int,int> port_list;//port_list will map node_id corresponding to port
 
-	//cache holding recently established connections
+	//cache holding recently established connections.It will not happen that connection established,message sent and it will close up immediately.
+	//Connection will be open for the future connections.
+
+	//This mutex is for the already established connections.
 	std::mutex recent_conn_mutex;
 	std::map<int,int> recent_conn;
 

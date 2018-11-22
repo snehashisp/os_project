@@ -10,9 +10,9 @@ string extract_socket_info(string data,int *node_id,string *ip,int *port) {
 
 	string others;
 	char c_ip[20];//Storing IP address
-	sscanf(data.c_str(),"%d#%[^#]#%d#%s",node_id,c_ip,port,others.c_str());
-	*ip = string(c_ip);
-	return others;
+	sscanf(data.c_str(),"%d#%[^#]#%d#%s",node_id,c_ip,port,others.c_str());//Format of message is:'nodeid#ip#port' and extracting it.
+	*ip = string(c_ip);//Converting the obtained c_ip to string ip.
+	return others;//Returning the remaining part of the message.
 
 }
 
@@ -20,7 +20,7 @@ string extract_socket_info(string data,int *node_id,string *ip,int *port) {
 int Socket_layer :: init(int cur_node_id,int port) {
 
 	this->cur_node_id = cur_node_id;
-
+	// Creating socket file descriptor 
 	if ((incoming_socket = socket(AF_INET,SOCK_STREAM,0)) == 0) {
 		perror("Error creating incoming socket");
 		return 0;
@@ -34,6 +34,8 @@ int Socket_layer :: init(int cur_node_id,int port) {
         return 0;
     } 
 
+
+    //Initialising address of Servers
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = port;
@@ -50,22 +52,27 @@ int Socket_layer :: init(int cur_node_id,int port) {
     	return 0;
     }
     else printf("Listening to incoming connections \n");
+
+    //Incoming thread is for handling incoming connections coming from other pastry nodes.
     incoming_thread = new thread(&Socket_layer :: incoming_conn,this);
+
+    //Overlay thread comes from the pastry overlay layer.
     overlay_thread = new thread(&Socket_layer :: recv_overlay,this);
 
 }	
 
 
-
-void Socket_layer :: incoming_conn() {
+//Handling incoming connections.(Incoming thread is required by the server to handle incoming connections.)
+void Socket_layer :: incoming_conn(){
 
 	char input_buffer[BUFFER_SIZE];
     printf("listen thread running \n");
 	while(1) {
-
+		//New connection is accepted and send it in the thread.
 		int conn = accept(incoming_socket, NULL,NULL);
 		if(conn < 0) 
 			perror("Failed to accept connection");
+		//Connection is accepted.Now the connected node will send the message to the server.(First Message format:nodeid#ip#port#data)
 		else {
 
 			memset(input_buffer,0,BUFFER_SIZE);
@@ -73,16 +80,21 @@ void Socket_layer :: incoming_conn() {
 			string data(input_buffer);
 			int node_id, port;
 			string ip;
-			string payload = extract_socket_info(data,&node_id,&ip,&port);
-			add_ip_port(node_id,ip,port);
+			string payload = extract_socket_info(data,&node_id,&ip,&port);//extract_socket_info() function extracts the node_id,ip,port from the message
+																		  //As node_id,ip and port are passed by reference ,we get their values.
 			
+			//Now Meta-data of connection is established(fetched and stored).
+
+			add_ip_port(node_id,ip,port);//We are adding (node_id,ip) and (node_id,port) to ip_list and port_list respectively.                               
 			recent_conn_mutex.lock();
+			//Recent connection's map is updated indicating that the new connection has been established successfully.
+			//Only those who have established the connection,only their Socket_FDs are stored in recent connections.
 			if(recent_conn.insert(pair<int,int>(node_id,conn)).second == false){
 				recent_conn_mutex.unlock();
 				continue;
 			} 
 			recent_conn_mutex.unlock();
-
+			//A thread is fired who will manage all the communication.This thread is for established connections.
 			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,payload);
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
 		}
@@ -143,7 +155,7 @@ int Socket_layer :: send_data(int node_id,string message) {
 		       	return 0; 
 		    } 
 		    recent_conn_mutex.lock();
-		    recent_conn.insert(pair<int,int>(node_id,conn));
+		    recent_conn.insert(pair<int,int>(node_id,conn));//node_id and socket_id of connection will be inserted to recent_connection
 		    recent_conn_mutex.unlock();
 
 		    send_string = to_string(cur_node_id) + string("#") + string(inet_ntoa(address.sin_addr)) + string("#") + to_string((int)address.sin_port) + "#";
@@ -163,6 +175,8 @@ int Socket_layer :: send_data(int node_id,string message) {
 
 }
 
+
+//Communication between server and other pastry nodes.
 void Socket_layer :: recv_node(int conn,int node_id,string data) {
 
 	char input_buffer[BUFFER_SIZE];
