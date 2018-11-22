@@ -5,17 +5,18 @@ using namespace std;
 extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
 
+//Server extracts the nodeid,ip and port from the message sent by the sender using this function.
 string extract_socket_info(string data,int *node_id,string *ip,int *port) {
 
 	string others;
-	char c_ip[20];
+	char c_ip[20];//Storing IP address
 	sscanf(data.c_str(),"%d#%[^#]#%d#%s",node_id,c_ip,port,others.c_str());
 	*ip = string(c_ip);
 	return others;
 
 }
 
-
+//This function is used for Server-Setup
 int Socket_layer :: init(int cur_node_id,int port) {
 
 	this->cur_node_id = cur_node_id;
@@ -111,6 +112,8 @@ void Socket_layer :: add_ip_port(int node_id,string ip,int port) {
 
 }
 
+
+//This function is used for Client-Setup
 int Socket_layer :: send_data(int node_id,string message) {
 
 	int conn;
