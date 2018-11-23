@@ -51,6 +51,7 @@ void Pastry_overlay :: init(int current_node_id,int l_size,int m_size,int max_ro
 	}
 	
 	thread *recv_socket_thread = new thread(&Pastry_overlay::recv_socket_thread,this);
+	thread *recv_overlay_thread = new thread(&Pastry_overlay::recv_api_thread,this);
 }
 
 int Pastry_overlay :: longest_prefix(int key) {
@@ -207,6 +208,11 @@ string Pastry_overlay :: get_leaf(int i) {
 
 }
 
+void Pastry_overlay :: recv_api_thread() {
+
+
+}
+
 void Pastry_overlay :: recv_socket_thread() {
 
 	while(1) {
@@ -216,9 +222,9 @@ void Pastry_overlay :: recv_socket_thread() {
 
 			if (mess -> type == SEND_ROW) {
 
-				
+
 			}
-			else if(mess -> type == ROUTE) {
+			else if(mess -> type == ADD_DHT || mess -> type == ) {
 
 				int key;
 				sscanf(mess->data.c_str(),"%d#",&key);
