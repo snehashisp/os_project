@@ -3,6 +3,7 @@
 using namespace std;
 Message_queue pastry_api_overlay_in, pastry_api_user_in;
 Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+Message_queue pastry_socket_overlay_in;
 
 int Message_queue ::  add_to_queue(message *m) {
 
@@ -31,6 +32,8 @@ message *Message_queue :: get_from_queue() {
 message *extract_message(string data) {
 
 	message *new_message = new message;
-	sscanf(data.c_str(),"%d#%s",&(new_message -> type),new_message -> data.c_str());
+	char mess[1024];
+	sscanf(data.c_str(),"%d#%s",&(new_message -> type),mess);
+	new_message -> data = string(mess);
 	return new_message;
 }

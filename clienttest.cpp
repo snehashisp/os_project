@@ -2,8 +2,12 @@
 #include<cstdio>
 #include<stdlib.h>
 #include"socket_layer.h"
+#include"pastry_overlay.h"
 #include<iostream>
 
+using namespace std;
+
+/*socket layer testing
 using namespace std;
 int main(int argc,char *argv[]) {
 
@@ -22,52 +26,27 @@ int main(int argc,char *argv[]) {
         sl.send_data(nodeid,data);
     }
 }
-
-
-
-/*
-int main(int argc, char const *argv[]) 
-{ 
-    struct sockaddr_in address; 
-    int sock = 0, valread; 
-    struct sockaddr_in serv_addr; 
-    string hello = "999#192.0.0.1#" + string(argv[1]) + "\n"; 
-    char buffer[1024] = {0}; 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-    { 
-        printf("\n Socket creation error \n"); 
-        return -1; 
-    } 
-   
-    memset(&serv_addr, '0', sizeof(serv_addr)); 
-   
-    serv_addr.sin_family = AF_INET; 
-    serv_addr.sin_port = atoi(argv[1]); 
-       
-    // Convert IPv4 and IPv6 addresses from text to binary form 
-    if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)  
-    { 
-        printf("\nInvalid address/ Address not supported \n"); 
-        return -1; 
-    } 
-   
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) 
-    { 
-        printf("\nConnection Failed \n"); 
-        return -1; 
-    } 
-    write(sock , hello.c_str() , hello.size()); 
-    
-
-    //valread = read( sock , buffer, 1024); 
-    //printf("%s\n",buffer ); 
-    char p[200];
-    while(1) {
-        scanf("%s",p);
-        hello = string(p);
-        write(sock,hello.c_str(),hello.size());
-
-    }
-    return 0; 
-} 
 */
+
+int main(int argc,char *argv[]) {
+
+
+    Pastry_overlay po;
+    int tot,key;
+    cin >> key;
+    po.init(key);
+
+    cin >> tot;
+    while(tot--) {
+        cin >> key;
+        po.add_to_table(key);
+    }
+
+    po.display_table();
+
+    int test_route;
+    cin >> test_route;
+    print_in_hex(test_route,MAX_ROWS);
+
+    print_in_hex(po.get_next_route(test_route),MAX_ROWS);
+}

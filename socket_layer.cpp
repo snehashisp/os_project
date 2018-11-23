@@ -76,6 +76,7 @@ void Socket_layer :: incoming_conn() {
 			string payload = extract_socket_info(data,&node_id,&ip,&port);
 			add_ip_port(node_id,ip,port);
 			
+			printf("%s\n",payload.c_str());
 			recent_conn_mutex.lock();
 			if(recent_conn.insert(pair<int,int>(node_id,conn)).second == false){
 				recent_conn_mutex.unlock();
@@ -83,7 +84,7 @@ void Socket_layer :: incoming_conn() {
 			} 
 			recent_conn_mutex.unlock();
 
-			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,payload);
+			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,string(payload.c_str()));
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
 		}
 	}
