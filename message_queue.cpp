@@ -1,8 +1,18 @@
 #include "message_queue.h"
 
 using namespace std;
-Message_queue pastry_api_overlay_in, pastry_api_user_in;
+Message_queue pastry_api_overlay_in, pastry_socket_overlay_in;
 Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+
+void Message_queue :: printQueue(){
+	//Take care because it pops all messages as well
+	//So after test dont use it anywhere
+	while(!m_queue.empty()){
+		message *m=m_queue.front();
+		printf("%d %s\n",m->type,m->data.c_str() );
+		m_queue.pop();
+	}
+}
 
 int Message_queue ::  add_to_queue(message *m) {
 

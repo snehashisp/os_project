@@ -28,7 +28,7 @@ int Socket_layer :: init(int cur_node_id,int port) {
 	else printf("Created Incoming socket\n");
 
 	int opt = 1;
-	if (setsockopt(incoming_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) 
+	if (setsockopt(incoming_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) 
     { 
         perror("setsockopt failure"); 
         return 0;
@@ -168,7 +168,6 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 	char input_buffer[BUFFER_SIZE];
 	int ret;
 	do {
-
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
 			printf("message Received %s\n",mem -> data.c_str());
