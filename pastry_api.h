@@ -28,19 +28,20 @@ long createNode(int port,char host[]);
 void fetch_myIp_address(char host[NI_MAXHOST]);
 class Pastry_api {
 
+	std::thread *recvOverlayThread;	
 	Pastry_overlay overlay;
 	Socket_layer sockets;
 
 	std::map<int,std::string> dht;
 
-	std::string *look_up(int key);
-	void add_key_value_pair(int key,std::string value);
-	void delete_key_value_pair(int key);
 	public:
 	int port=0;	
 	char host[NI_MAXHOST];
 	int nodeId;
 	void init();
+	std::string look_up(int key);
+	void add_key_value_pair(int key,std::string value);
+	void delete_key_value_pair(int key);
 	void recv_overlay_thread();
 	void recv_user_thread();
 
