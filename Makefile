@@ -7,7 +7,7 @@ OBJ = message_queue.o socket_layer.o clienttest.o pastry_api.o
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 main: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ -pthread
+	$(CC) $(CFLAGS) -o $@ $^ -lssl -lcrypto -pthread
 
 clean :
 	-rm *.o $(objects) main
