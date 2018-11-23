@@ -99,7 +99,7 @@ void Pastry_overlay :: add_to_table(int key) {
 	}
 }
 
-void Pastry_overlay :: remove_from_table(int key) {
+int Pastry_overlay :: remove_from_table(int key) {
 
 	if(key > current_node_id && key < leaf_set[l_size -1]) {
 		for(int i = l_size/2; i < l_size; i++) 
@@ -108,7 +108,9 @@ void Pastry_overlay :: remove_from_table(int key) {
 				leaf_set[i] = INT_MAX;
 				sort(leaf_set + l_size/2,leaf_set + l_size);
 				route_mutex.unlock();
+				return 1;
 			}
+
 	}
 	else if(key < current_node_id && key > leaf_set[l_size/2 -1]) {
 		for(int i = 0; i < l_size/2; i++)
@@ -117,6 +119,7 @@ void Pastry_overlay :: remove_from_table(int key) {
 				leaf_set[i] = 0;
 				sort(leaf_set,leaf_set + l_size/2,greater<int>());
 				route_mutex.unlock();
+				return 2;
 			}
 	}
 	else {
@@ -126,10 +129,12 @@ void Pastry_overlay :: remove_from_table(int key) {
 		route_mutex.lock();
 		if(route_table[shl][pos] == key) route_table[shl][pos] = INT_MAX;
 		route_mutex.unlock();
+		return 3;
 	}
 
 }
 
+string Pastry_overlay :: get_row(int i)
 int Pastry_overlay :: get_next_route(int key) {
 
 	if(key <= leaf_set[l_size-1] && key >=leaf_set[l_size/2-1]) {
@@ -186,6 +191,22 @@ int Pastry_overlay :: get_next_route(int key) {
 	}
 }
 
+string Pastry_overlay :: get_row(int i) {
+
+	string row = to_string(i) + string("#");
+	for(int j = 0; j < max_cols; j++) row = row + to_string(route_table[i][j]) + string("#");
+	return row;
+
+}
+	
+string Pastry_overlay :: get_leaf(int i) {
+
+	string row = "";
+	for(int j = 0; j < l_size; j++) row = row + to_string(leaf_set[j]) + string("#");
+	return row;
+
+}
+
 void Pastry_overlay :: recv_socket_thread() {
 
 	while(1) {
@@ -195,13 +216,18 @@ void Pastry_overlay :: recv_socket_thread() {
 
 			if (mess -> type == SEND_ROW) {
 
+				
 			}
 			else if(mess -> type == ROUTE) {
 
 				int key;
 				sscanf(mess->data.c_str(),"%d#",&key);
 				key = key >> 16;
-				string new_message = 
+				int next_node = get_next_route(key);
+				string new_message = string((int)mess->type) + string("#") + mess -> data.c_str();
+				while(!sock_layer -> send_data(next_node,new_message)) {
+					remove_from_table(next_node);
+				}
 
 			}
 			else if(mess -> type == RECV_ROW) {
