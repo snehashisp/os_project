@@ -10,34 +10,33 @@ extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
 extern Message_queue pastry_socket_overlay_in;
 
-
-using namespace std;
-
-/*socket layer testing
 using namespace std;
 int main(int argc,char *argv[]) {
     Pastry_api api;
     api.init();
 
 
-    message *msg=new message();
-    msg->type=PUT;
-    msg->data="10#anuj";
+    // message *msg=new message();
+    // msg->type=PUT;
+    // msg->data="10#anuj";
 
-<<<<<<< HEAD
-    message *msg2=new message();
-    msg2->type=GET;
-    msg2->data="123#10";
 
-    while(!pastry_overlay_api_in.add_to_queue(msg));
-    while(!pastry_overlay_api_in.add_to_queue(msg2));
-=======
-        cin>>nodeid >> data;
-        sl.send_data(nodeid,data);
-    }
+    // message *msg2=new message();
+    // msg2->type=GET;
+    // msg2->data="123#10";
+
+    // while(!pastry_overlay_api_in.add_to_queue(msg));
+    // while(!pastry_overlay_api_in.add_to_queue(msg2));
+    //     cin>>nodeid >> data;
+    //     sl.send_data(nodeid,data);
+    // }
+    while(1)
+        {
+            api.recv_user_thread();
+        }
 }
-*/
 
+/*
 int main(int argc,char *argv[]) {
 
 
@@ -61,5 +60,5 @@ int main(int argc,char *argv[]) {
     mem -> data = data;
     while(!pastry_api_overlay_in.add_to_queue(mem));
     while(1);
-}
+}*/
 

@@ -46,7 +46,9 @@ class Pastry_overlay {
 
 	key_type get_next_route(int key);
 	int repair_node(int key);
-	int iniitialize_table(int ip,int port);
+	int initialize_table(std::string ip,int port){
+		return 1;
+	}
 	void display_table();
 	int quit();
 
