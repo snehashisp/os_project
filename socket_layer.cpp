@@ -4,6 +4,7 @@ using namespace std;
 
 extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+extern Message_queue pastry_socket_overlay_in;
 
 //Server extracts the nodeid,ip and port from the message sent by the sender using this function.
 string extract_socket_info(string data,int *node_id,string *ip,int *port) {
@@ -84,6 +85,11 @@ void Socket_layer :: incoming_conn() {
 			} 
 			recent_conn_mutex.unlock();
 
+			message *new_mem = new message();
+			new_mem -> type = ADD_NODE;
+			new_mem -> data = to_string(node_id);
+			while(!pastry_socket_overlay_in.add_to_queue(new_mem));
+
 			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,string(payload.c_str()));
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
 		}
@@ -91,10 +97,20 @@ void Socket_layer :: incoming_conn() {
 
 }
 
+
 void Socket_layer :: recv_overlay() {
+/*
+	while(1) {
 
+		message *mess;
+		while((mess = pastry_overlay_socket_in.get_from_queue()) == NULL) {
 
-}
+			string send_mess = to_string((int)mess->type) + string("#") + mess -> data;
+		}
+	}
+*/
+
+}	
 
 void Socket_layer :: add_ip_port(int node_id,string ip,int port) {
 
@@ -122,7 +138,6 @@ int Socket_layer :: send_data(int node_id,string message) {
 	auto p = recent_conn.find(node_id);
 	recent_conn_mutex.unlock();
 
-	debug(10);
 	string send_string = "";
 	if(p == recent_conn.end()) {
 
@@ -172,7 +187,7 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
-			printf("message Received %s\n",mem -> data.c_str());
+			//printf("message Received %s\n",mem -> data.c_str());
 			if(mem -> type == PING) {
 				string ping_reply = to_string((int)PING_REPLY) + string("#");
 				write(conn,ping_reply.c_str(),ping_reply.size());
@@ -184,6 +199,10 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 				close(conn);
 				break;
 			}
+			else if(mem -> type == PUT || mem -> type == GET) {
+				while(!pastry_socket_overlay_in.add_to_queue(mem));
+			}
+
 		}
 		data.clear();
 		ret = read(conn,input_buffer,BUFFER_SIZE);

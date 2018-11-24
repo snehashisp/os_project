@@ -6,6 +6,8 @@
 #include <mutex>
 #include <algorithm>
 
+typedef int key_type;
+
 #ifndef PASTRY_OVERLAY
 #define PASTRY_OVERLAY
 
@@ -25,11 +27,11 @@ class Pastry_overlay {
 	int current_node_id;
 
 	std::mutex route_mutex;
-	int *leaf_set;
+	key_type *leaf_set;
 	int l_size;
-	int *neighbour_set;
+	key_type *neighbour_set;
 	int m_size;
-	int **route_table;
+	key_type **route_table;
 	int max_rows,max_cols;
 
 	public:
@@ -37,15 +39,18 @@ class Pastry_overlay {
 	int get_hex_at_pos(int key,int pos);
 	void add_to_table(int key);
 	void remove_from_table(int key);
+	std::string get_row(int i);
+	std::string get_leaf();
+	void route(message *mess);
 	//public:
 
-	int get_next_route(int key);
+	key_type get_next_route(int key);
 	int repair_node(int key);
 	int iniitialize_table(int ip,int port);
 	void display_table();
 	int quit();
 
-	void init(int current_node_id,int l_size = LSIZE,int m_size = MSIZE,int max_rows = MAX_ROWS,int max_cols = MAX_COLS);
+	void init(int current_node_id,Socket_layer *sl,int l_size = LSIZE,int m_size = MSIZE,int max_rows = MAX_ROWS,int max_cols = MAX_COLS);
 	void recv_api_thread();
 	void recv_socket_thread();
 

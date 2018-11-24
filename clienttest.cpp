@@ -5,6 +5,11 @@
 #include"pastry_overlay.h"
 #include<iostream>
 
+extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
+extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+extern Message_queue pastry_socket_overlay_in;
+
+
 using namespace std;
 
 /*socket layer testing
@@ -32,21 +37,22 @@ int main(int argc,char *argv[]) {
 
 
     Pastry_overlay po;
-    int tot,key;
-    cin >> key;
-    po.init(key);
+    Socket_layer so;
 
-    cin >> tot;
-    while(tot--) {
-        cin >> key;
-        po.add_to_table(key);
-    }
+    int port = atoi(argv[1]);
+    so.init(port,port);
+    po.init(port,&so);
 
-    po.display_table();
+    int nodeid,port2;
+    cin >> nodeid >> port2;
+    so.add_ip_port(nodeid,"0.0.0.0",port2);
+    so.send_data(nodeid,"1#data");
 
-    int test_route;
-    cin >> test_route;
-    print_in_hex(test_route,MAX_ROWS);
-
-    print_in_hex(po.get_next_route(test_route),MAX_ROWS);
+    message *mem = new message();
+    mem -> type = PUT;
+    string data;
+    cin >> data;
+    mem -> data = data;
+    while(!pastry_api_overlay_in.add_to_queue(mem));
+    while(1);
 }

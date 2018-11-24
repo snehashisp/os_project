@@ -19,8 +19,10 @@ int Message_queue ::  add_to_queue(message *m) {
 message *Message_queue :: get_from_queue() {
 
 	if(lock.try_lock()) {
-		if(m_queue.empty()) 
+		if(m_queue.empty()) {
+			lock.unlock();
 			return NULL;
+		}
 		message *ret = m_queue.front();
 		m_queue.pop();
 		lock.unlock();
