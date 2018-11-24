@@ -3,8 +3,17 @@
 #include"socket_layer.h"
 #include"pastry_api.h"
 #include "message_queue.h"
+#include"pastry_overlay.h"
 #include<iostream>
 
+extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
+extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+extern Message_queue pastry_socket_overlay_in;
+
+
+using namespace std;
+
+/*socket layer testing
 using namespace std;
 int main(int argc,char *argv[]) {
     Pastry_api api;
@@ -15,33 +24,42 @@ int main(int argc,char *argv[]) {
     msg->type=PUT;
     msg->data="10#anuj";
 
+<<<<<<< HEAD
     message *msg2=new message();
     msg2->type=GET;
     msg2->data="123#10";
 
     while(!pastry_overlay_api_in.add_to_queue(msg));
     while(!pastry_overlay_api_in.add_to_queue(msg2));
-
-    cout<<"adsdndsd";
-    while(1){
-        // cout<<"hello";
-        pastry_api_overlay_in.printQueue();
+=======
+        cin>>nodeid >> data;
+        sl.send_data(nodeid,data);
     }
-
-
-    // api.recv_user_thread();
-    // int port = atoi(argv[1]);
-    // Socket_layer sl;
-    // sl.init(port,port);
-    // int nodeid,port2;
-    // cin >> nodeid >> port2;
-    // sl.add_ip_port(nodeid,"0.0.0.0",port2);
-    // sl.send_data(nodeid,"1#data");
-
-    // string data;
-    // while(1) {
-
-    //     cin>>nodeid >> data;
-    //     sl.send_data(nodeid,data);
-    // }
 }
+*/
+
+int main(int argc,char *argv[]) {
+
+
+    Pastry_overlay po;
+    Socket_layer so;
+
+    int port = atoi(argv[1]);
+    //node id ip port
+    so.init(port,"0.0.0.0",port);
+    po.init(port,&so);
+
+    int nodeid,port2;
+    cin >> nodeid >> port2;
+    so.add_ip_port(nodeid,"0.0.0.0",port2);
+    so.send_data(nodeid,"1#data");
+
+    message *mem = new message();
+    mem -> type = PUT;
+    string data;
+    cin >> data;
+    mem -> data = data;
+    while(!pastry_api_overlay_in.add_to_queue(mem));
+    while(1);
+}
+

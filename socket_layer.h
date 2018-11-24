@@ -29,7 +29,10 @@ class Socket_layer {
 	struct sockaddr_in address;
 	//total number of nodes in pastry net 
 	int total_nodes;
+
 	int cur_node_id;
+	int cur_port;
+	std::string cur_ip;
 
 	std::mutex socket_mutex;
 	//ip and port of all nodes in the pastry net as a map with node id as key
@@ -46,7 +49,8 @@ class Socket_layer {
 	void remove_ip_port(int node_id);
 	int  send_data(int node_id,std::string message);
 
-	int init(int cur_node_id,int port);
+	//inititalize 
+	int init(int cur_node_id,std::string ip,int port);
 
 	void recv_overlay();
 	void recv_node(int conn,int node_id,std::string data);

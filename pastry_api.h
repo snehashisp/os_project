@@ -26,6 +26,7 @@ vector<string> parse(string s, char delim);
 void addToQueue(enum msg_type mType, string data);
 long createNode(int port,char host[]);
 void fetch_myIp_address(char host[NI_MAXHOST]);
+
 class Pastry_api {
 
 	std::thread *recvOverlayThread;	

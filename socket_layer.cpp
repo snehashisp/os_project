@@ -4,6 +4,7 @@ using namespace std;
 
 extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+//extern Message_queue pastry_socket_overlay_in;
 
 //Server extracts the nodeid,ip and port from the message sent by the sender using this function.
 string extract_socket_info(string data,int *node_id,string *ip,int *port) {
@@ -17,9 +18,11 @@ string extract_socket_info(string data,int *node_id,string *ip,int *port) {
 }
 
 //This function is used for Server-Setup
-int Socket_layer :: init(int cur_node_id,int port) {
+int Socket_layer :: init(int cur_node_id,string ip, int port) {
 
-	this->cur_node_id = cur_node_id;
+	this -> cur_node_id = cur_node_id;
+	this -> cur_ip = ip;
+	this -> cur_port = port;
 
 	if ((incoming_socket = socket(AF_INET,SOCK_STREAM,0)) == 0) {
 		perror("Error creating incoming socket");
@@ -76,6 +79,7 @@ void Socket_layer :: incoming_conn() {
 			string payload = extract_socket_info(data,&node_id,&ip,&port);
 			add_ip_port(node_id,ip,port);
 			
+			printf("%s\n",payload.c_str());
 			recent_conn_mutex.lock();
 			if(recent_conn.insert(pair<int,int>(node_id,conn)).second == false){
 				recent_conn_mutex.unlock();
@@ -83,17 +87,32 @@ void Socket_layer :: incoming_conn() {
 			} 
 			recent_conn_mutex.unlock();
 
-			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,payload);
+			message *new_mem = new message();
+			new_mem -> type = ADD_NODE;
+			new_mem -> data = to_string(node_id);
+			while(!pastry_socket_overlay_in.add_to_queue(new_mem));
+
+			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,string(payload.c_str()));
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
 		}
 	}
 
 }
 
+
 void Socket_layer :: recv_overlay() {
+/*
+	while(1) {
 
+		message *mess;
+		while((mess = pastry_overlay_socket_in.get_from_queue()) == NULL) {
 
-}
+			string send_mess = to_string((int)mess->type) + string("#") + mess -> data;
+		}
+	}
+*/
+
+}	
 
 void Socket_layer :: add_ip_port(int node_id,string ip,int port) {
 
@@ -121,7 +140,6 @@ int Socket_layer :: send_data(int node_id,string message) {
 	auto p = recent_conn.find(node_id);
 	recent_conn_mutex.unlock();
 
-	debug(10);
 	string send_string = "";
 	if(p == recent_conn.end()) {
 
@@ -146,7 +164,7 @@ int Socket_layer :: send_data(int node_id,string message) {
 		    recent_conn.insert(pair<int,int>(node_id,conn));
 		    recent_conn_mutex.unlock();
 
-		    send_string = to_string(cur_node_id) + string("#") + string(inet_ntoa(address.sin_addr)) + string("#") + to_string((int)address.sin_port) + "#";
+		    send_string = to_string(cur_node_id) + string("#") + cur_ip + string("#") + to_string((int)address.sin_port) + "#";
 		    thread *recv_thread = new thread(&Socket_layer::recv_node,this,conn,node_id,"");
 		    printf("connection established\n");
 
@@ -170,7 +188,7 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 	do {
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
-			printf("message Received %s\n",mem -> data.c_str());
+			//printf("message Received %s\n",mem -> data.c_str());
 			if(mem -> type == PING) {
 				string ping_reply = to_string((int)PING_REPLY) + string("#");
 				write(conn,ping_reply.c_str(),ping_reply.size());
@@ -182,6 +200,10 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 				close(conn);
 				break;
 			}
+			else if(mem -> type == PUT || mem -> type == GET) {
+				while(!pastry_socket_overlay_in.add_to_queue(mem));
+			}
+
 		}
 		data.clear();
 		ret = read(conn,input_buffer,BUFFER_SIZE);

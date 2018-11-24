@@ -7,7 +7,9 @@
 
 
 //Types of messages
-enum msg_type {SEND,ROUTE,PING,PING_REPLY,EXIT,PORT, CREATE, JOIN, PUT, GET, LSET, NSET, ROUTETABLE, QUIT, SHUTDOWN, ADD_DHT, GET_DHT, RESPONSE};
+
+enum msg_type {SEND,ROUTE,PING,PING_REPLY,EXIT, SEND_ROW, RECV_ROW, SEND_TABLE, RECV_TABLE, SEND_LEAF, ADD_NODE,
+	RECV_LEAF,ADD_DHT,PORT, CREATE, JOIN, PUT, GET, LSET, NSET, ROUTETABLE, QUIT, SHUTDOWN, RESPONSE};
 
 struct message {
 
@@ -35,6 +37,7 @@ class Message_queue {
 
 extern Message_queue pastry_api_overlay_in, pastry_socket_overlay_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
+//extern Message_queue pastry_socket_overlay_in;
 
 message *extract_message(std::string data);
 
