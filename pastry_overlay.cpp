@@ -2,6 +2,9 @@
 #include <cmath>
 #include <climits>
 #include <cstring>
+#include <vector>
+#include <sstream>
+#include <iostream>
 
 using namespace std;
 void swap(int &a,int &b) {
@@ -9,6 +12,7 @@ void swap(int &a,int &b) {
 	a = b;
 	b = temp;
 }
+
 
 extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
@@ -192,22 +196,6 @@ key_type Pastry_overlay :: get_next_route(int key) {
 	}
 }
 
-string Pastry_overlay :: get_row(int i) {
-
-	string row = to_string(i) + string("#");
-	for(int j = 0; j < max_cols; j++) row = row + to_string(route_table[i][j]) + string("#");
-	return row;
-
-}
-	
-string Pastry_overlay :: get_leaf() {
-
-	string row = "";
-	for(int j = 0; j < l_size; j++) row = row + to_string(leaf_set[j]) + string("#");
-	return row;
-
-}
-
 void Pastry_overlay :: recv_api_thread() {
 
 	while(1) {
@@ -217,6 +205,7 @@ void Pastry_overlay :: recv_api_thread() {
 
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
+				delete(mess);
 			}
 		}
 	}
@@ -227,21 +216,68 @@ void Pastry_overlay :: route(message *mess) {
 	int key;
 	sscanf(mess->data.c_str(),"%d#",&key);
 	key = key & ((1 << 17) - 1);
-	printf("%d ",key);
 	int next_node = get_next_route(key);
 	if(next_node == current_node_id) {
 		//while(!pastry_overlay_api_in.add_to_queue(mess));
-		printf("Message received %s\n",mess->data.c_str());
+		if(mess -> type == INIT) {
+			string msg = to_string((int)INIT_FINAL) + "#";
+			sock_layer -> send_data(key,msg);
+		}
+		//printf("\nMessage received %s\n",mess->data.c_str());
 	}
 	else {
 
 		string new_message = to_string((int)mess->type) + string("#") + mess -> data.c_str();
-		printf("%d %s",next_node,new_message.c_str());
-		printf("Rerouted to %d \n",next_node);
-		while(!sock_layer -> send_data(next_node,new_message)) {
+		printf("\nRerouted message %d %s",next_node,new_message.c_str());
+		//printf("\nRerouted to %d \n",next_node);
+		if(!sock_layer -> send_data(next_node,new_message)) {
 			remove_from_table(next_node);
 		}
 	}
+}
+
+message *Pastry_overlay :: get_table_message() {
+
+	message *mess = new message();
+	mess -> type = RECV_TABLE;
+	string sendstr = to_string(current_node_id) + string("#") + sock_layer -> cur_ip + string("#") + to_string(sock_layer -> cur_port) + "#";
+	for(int i = 0; i < l_size; i++) sendstr = sendstr + to_string(leaf_set[i]) + "#";
+	for(int i = 0; i < max_rows; i++) {
+		for(int j = 0; j < max_cols; j++) 
+			sendstr = sendstr + to_string(route_table[i][j]) + "#";
+	}
+	for(int i = 0; i < m_size; i++) sendstr = sendstr + to_string(neighbour_set[i]) + "#";
+
+	mess -> data = sendstr;
+	return mess;
+}
+
+void Pastry_overlay :: update_table_message(message *mess) {
+
+	vector <string> tokens; 
+    stringstream ss(mess -> data); 
+    string word; 
+    while(getline(ss, word, '#'))
+        tokens.push_back(word); 
+    add_to_table(atoi(tokens[0].c_str()));
+    sock_layer -> add_ip_port(atoi(tokens[0].c_str()),tokens[1],atoi(tokens[2].c_str()));
+    //printf("received data %s\n",mess -> data.c_str());
+
+    //printf("leaf set");
+    int tp = 3;
+    for(int i = 0; i < l_size; i++) {
+    	//cout << tokens[tp++] << " ";
+    	add_to_table(atoi(tokens[tp++].c_str()));
+    }
+    for(int i = 0; i < max_rows; i++) {
+    	for(int j = 0; j < max_cols; j++) {
+    		//cout << tokens[tp++] << " ";
+    		add_to_table(atoi(tokens[tp++].c_str()));
+    	}
+    	//cout << endl;
+    }
+    printf("Updated table \n");
+    display_table();
 }
 
 void Pastry_overlay :: recv_socket_thread() {
@@ -253,6 +289,7 @@ void Pastry_overlay :: recv_socket_thread() {
 
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
+				delete(mess);
 			}
 			else if(mess -> type == ADD_NODE) {
 
@@ -264,11 +301,72 @@ void Pastry_overlay :: recv_socket_thread() {
 				delete(mess);
 
 			}
+			else if(mess -> type == SEND_TABLE || mess -> type == INIT) {
+
+				if(check_init == false) {
+					while(!pastry_socket_overlay_in.add_to_queue(mess));
+					continue;
+				}
+
+				string ip;
+				int nid, port;
+				sscanf(mess -> data.c_str(),"%d#%[^#]#%d",&nid,ip.c_str(),&port);
+				sock_layer -> add_ip_port(nid,ip,port);
+				message *ret_mess = get_table_message();
+				string msg = to_string((int)ret_mess -> type) + string("#") + ret_mess -> data;
+				//printf("\nSending %s\n",ret_mess -> data.c_str());
+				sock_layer -> send_data(nid,msg);
+				delete(ret_mess);
+				if (mess -> type == INIT) {
+					msg = to_string(SEND_TABLE) + string("#") + to_string(current_node_id) + string("#") 
+						+ sock_layer ->  cur_ip + string("#") + to_string(sock_layer -> cur_port);
+					sock_layer -> send_data(nid,msg);
+					route(mess);
+				}
+				delete(mess);
+			}
+			else if(mess -> type == RECV_TABLE) {
+				update_table_message(mess);
+				delete(mess);
+			}
+			else if(mess -> type == INIT_FINAL) {
+				printf("Final initialization done\n");
+				queue<message *> mess_queue;
+				while(mess = pastry_socket_overlay_in.get_from_queue()) {
+					if(mess -> type != RECV_TABLE) mess_queue.push(mess);
+					else update_table_message(mess);
+				}
+				while(!mess_queue.empty()) {
+					while(!pastry_socket_overlay_in.add_to_queue(mess_queue.front()));
+					mess_queue.pop();
+				}
+				check_init = true;
+				sock_layer -> remove_ip_port(0);
+				printf("Node initialization done\n");
+			}
+			
 		}
 
 	}
 }
 
+void Pastry_overlay :: initialize_table(std::string ip,int port) {
+
+	cout << ip << endl;
+	cout << sock_layer -> cur_ip << endl;
+	if(ip == sock_layer -> cur_ip && port == sock_layer -> cur_port) {
+		printf("Node self initialized\n");
+		check_init = true;
+		return;
+	}
+	sock_layer -> add_ip_port(0,ip,port);
+	string msg = to_string(INIT) + string("#") + to_string(current_node_id) + string("#") 
+		+ sock_layer ->  cur_ip + string("#") + to_string(sock_layer -> cur_port);
+	if(!sock_layer -> send_data(0,msg)) {
+		printf("Failed to contact initialization node\n");
+	}
+	else printf("initialization started\n");
+}
 
 void Pastry_overlay :: display_table() {
 
@@ -281,7 +379,7 @@ void Pastry_overlay :: display_table() {
 
 	printf("Leaf Set\n");
 	for(int i = 0; i < l_size; i++) {
-		if(leaf_set[i] != INT_MAX || leaf_set != 0)
+		if(leaf_set[i] != INT_MAX || leaf_set[i] != 0)
 			printf(format,leaf_set[i]);
 		else printf(format,0);
  	}

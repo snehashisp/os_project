@@ -110,7 +110,7 @@ void fetch_myIp_address(char host[NI_MAXHOST]){
 
 
 void Pastry_api:: recv_user_thread(){
-	/*
+	/
 	string s;
 	while(1){
 		getline(cin,s);
@@ -177,5 +177,5 @@ void Pastry_api:: recv_user_thread(){
 			print("Please provide some command")
 
 	}
-	*/
+	
 }

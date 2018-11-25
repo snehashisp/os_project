@@ -30,9 +30,6 @@ class Socket_layer {
 	//total number of nodes in pastry net 
 	int total_nodes;
 
-	int cur_node_id;
-	int cur_port;
-	std::string cur_ip;
 
 	std::mutex socket_mutex;
 	//ip and port of all nodes in the pastry net as a map with node id as key
@@ -44,6 +41,10 @@ class Socket_layer {
 	std::map<int,int> recent_conn;
 
 	public:
+
+	int cur_node_id;
+	int cur_port;
+	std::string cur_ip;
 
 	void add_ip_port(int node_id,std::string ip,int port);
 	void remove_ip_port(int node_id);
