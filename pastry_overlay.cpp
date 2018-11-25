@@ -260,7 +260,8 @@ void Pastry_overlay :: update_table_message(message *mess) {
     while(getline(ss, word, '#'))
         tokens.push_back(word); 
     add_to_table(atoi(tokens[0].c_str()));
-    sock_layer -> add_ip_port(atoi(tokens[0].c_str()),tokens[1],atoi(tokens[2].c_str()));
+    cout << tokens[1];
+    sock_layer -> add_ip_port(atoi(tokens[0].c_str()),string(tokens[1].c_str()),atoi(tokens[2].c_str()));
     //printf("received data %s\n",mess -> data.c_str());
 
     //printf("leaf set");
@@ -283,9 +284,12 @@ void Pastry_overlay :: update_table_message(message *mess) {
 void Pastry_overlay :: recv_socket_thread() {
 
 	while(1) {
+		//printf("fsdfdsf\n");
 
 		message *mess;
 		while((mess = pastry_socket_overlay_in.get_from_queue()) != NULL) {
+
+			printf("%d \n", mess -> type);
 
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
@@ -330,7 +334,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				delete(mess);
 			}
 			else if(mess -> type == INIT_FINAL) {
-				printf("Final initialization done\n");
+				printf("Final init arrived\n");
 				queue<message *> mess_queue;
 				while(mess = pastry_socket_overlay_in.get_from_queue()) {
 					if(mess -> type != RECV_TABLE) mess_queue.push(mess);
@@ -344,7 +348,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				sock_layer -> remove_ip_port(0);
 				printf("Node initialization done\n");
 			}
-			
+				
 		}
 
 	}
@@ -379,7 +383,7 @@ void Pastry_overlay :: display_table() {
 
 	printf("Leaf Set\n");
 	for(int i = 0; i < l_size; i++) {
-		if(leaf_set[i] != INT_MAX || leaf_set[i] != 0)
+		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0)
 			printf(format,leaf_set[i]);
 		else printf(format,0);
  	}

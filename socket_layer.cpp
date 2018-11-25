@@ -194,7 +194,10 @@ int Socket_layer :: send_data(int node_id,string message) {
 	recent_conn_mutex.unlock();
 
 	send_string = send_string + message + string("\n");
-	if(write(conn,send_string.c_str(),send_string.size()) == -1) return 0;
+	if(write(conn,send_string.c_str(),send_string.size()) == -1) {
+		printf("failed to send data\n");
+		return 0;
+	}
 	printf("Sent message %s\n", send_string.c_str());
 	return 1;
 
