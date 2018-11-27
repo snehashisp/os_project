@@ -1,4 +1,13 @@
+CC = g++-6
+CFLAGS = -Wall -std=c++0x
+DEPS =message_queue.h socket_layer.h pastry_api.h pastry_overlay.h
+OBJ = message_queue.o socket_layer.o clienttest.o pastry_api.o pastry_overlay.o
 
-main : message_queue.o socket_layer.o pastry_overlay.o test.cpp clienttest.cpp 
-	g++ -g -o client clienttest.cpp socket_layer.o pastry_overlay.o message_queue.o -pthread -lssl -lcrypto
+%.o: %.cpp $(DEPS)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
+main: $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^ -lssl -lcrypto -pthread
+
+clean :
+	-rm *.o $(objects) main
