@@ -23,8 +23,10 @@ void Pastry_api :: recv_overlay_thread(){
 				if(msg->type==PUT){
 					//ADD into dht
 					//data format key#value#nodeid#ip#port
+					print("hello");
+					print(msg->data);
 					std::vector<string> keyValue=parse(msg->data,'#');
-					// printf("In PUT %s %s\n", keyValue[0].c_str(), keyValue[1].c_str() );
+					printf("In PUT %s %s\n", keyValue[0].c_str(), keyValue[1].c_str() );
 					add_key_value_pair(atoi(keyValue[0].c_str()),keyValue[1]);
 					replicate(atoi(keyValue[0].c_str()),keyValue[1]);
 
@@ -33,7 +35,7 @@ void Pastry_api :: recv_overlay_thread(){
 					msg->data=keyValue[2]+"#"+keyValue[3]+"#"+keyValue[4]+"#success";
 
 					while(!pastry_api_overlay_in.add_to_queue(msg));
-
+					
 					message *msg2=new message();
 					msg2->type=REPLICATE;
 					msg2->data=keyValue[0]+"#"+keyValue[1]+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
@@ -45,11 +47,12 @@ void Pastry_api :: recv_overlay_thread(){
 					//get value from my lookup
 					//data will be key#sourcenodeid#ip#port
 					std::vector<string> nodeIdKey=parse(msg->data,'#');
-					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
+					printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
+					print(value);
 					message *msg=new message();
 					msg->type=RESPONSE;
-					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value;
+					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
 					while(!pastry_api_overlay_in.add_to_queue(msg));
 				}
 				else if(msg->type==REPLICATE){
@@ -61,6 +64,14 @@ void Pastry_api :: recv_overlay_thread(){
 					msg->type=RESPONSE;
 					msg->data=nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+nodeIdKey[4]+"#success";
 					while(!pastry_api_overlay_in.add_to_queue(msg));
+				}
+				else if (msg->type== RESPONSE)
+				{
+					/* receive from destination */
+					//data will be sourcenodeid#ip#port#value#key
+					std::vector<string> list=parse(msg->data,'#');
+					print("Key= "+list[4]+" value= "+list[3]);
+
 				}
 			}
 	}
@@ -152,7 +163,7 @@ void Pastry_api :: putOperation(string keystr,string value)
 		message *msg=new message();
 		msg->type=PUT;
 		msg->data=keystr + '#' + value + '#'+ to_string(nodeId)+ '#' + ip +'#' +to_string(port);
-		pastry_api_overlay_in.add_to_queue(msg);
+		while(!pastry_api_overlay_in.add_to_queue(msg));
 	}
 }
 
@@ -166,9 +177,9 @@ void Pastry_api :: getOperation(string keystr)
 	else
 	{
 		message *msg =new message();
-		msg->type=PUT;
+		msg->type=GET;
 		msg->data=keystr + '#'+ to_string(nodeId)+ '#' + ip +'#' +to_string(port);
-		pastry_api_overlay_in.add_to_queue(msg);	
+		while(!pastry_api_overlay_in.add_to_queue(msg));	
 	}
 }
 
@@ -200,7 +211,7 @@ void Pastry_api:: recv_user_thread(){
 			else if(opcode=="join"){
 				print("join code");
 				if(totalWords>2)
-					overlay.initialize_table(nodeId,ip,port);
+					overlay.initialize_table(atoi(cli[1].c_str()),cli[2],atoi(cli[3].c_str()));
 			}
 			else if(opcode=="put"){
 				print("put code");
