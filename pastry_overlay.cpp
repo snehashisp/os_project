@@ -278,7 +278,7 @@ void Pastry_overlay :: display_table() {
 	printf("\nCurrent Node ");
 	printf(format,current_node_id);
 	printf("\n");
-
+	
 	printf("Leaf Set\n");
 	for(int i = 0; i < l_size; i++) {
 		if(leaf_set[i] != INT_MAX || leaf_set != 0)

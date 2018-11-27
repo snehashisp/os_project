@@ -6,30 +6,60 @@ void Pastry_api :: init(){
 	recvOverlayThread = new thread(&Pastry_api :: recv_overlay_thread,this);
 }
 
+void Pastry_api :: printDHT(){
+	cout<<"KEY\t"<<"VALUE"<<endl;
+	for (auto i =dht.begin(); i != dht.end(); ++i)
+		cout<<(i->first)<<"\t"<<(i->second)<<endl;
+}
+
+void Pastry_api :: replicate(int key, string value){
+	add_key_value_pair(key,value);
+}
+
 void Pastry_api :: recv_overlay_thread(){
 	while(1){
 			message *msg=pastry_overlay_api_in.get_from_queue();
 			if(msg){
 				if(msg->type==PUT){
 					//ADD into dht
-					//data format key#value
+					//data format key#value#nodeid#ip#port
 					std::vector<string> keyValue=parse(msg->data,'#');
 					// printf("In PUT %s %s\n", keyValue[0].c_str(), keyValue[1].c_str() );
 					add_key_value_pair(atoi(keyValue[0].c_str()),keyValue[1]);
+					replicate(atoi(keyValue[0].c_str()),keyValue[1]);
+
 					message *msg=new message();
 					msg->type=RESPONSE;
-					msg->data="successfully put";
+					msg->data=keyValue[2]+"#"+keyValue[3]+"#"+keyValue[4]+"#success";
+
 					while(!pastry_api_overlay_in.add_to_queue(msg));
+
+					message *msg2=new message();
+					msg2->type=REPLICATE;
+					msg2->data=keyValue[0]+"#"+keyValue[1]+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
+
+					while(!pastry_api_overlay_in.add_to_queue(msg2));
+
 				}
 				else if(msg->type==GET){
 					//get value from my lookup
-					//data will be sourcenodeid#key
+					//data will be key#sourcenodeid#ip#port
 					std::vector<string> nodeIdKey=parse(msg->data,'#');
 					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
 					message *msg=new message();
 					msg->type=RESPONSE;
 					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value;
+					while(!pastry_api_overlay_in.add_to_queue(msg));
+				}
+				else if(msg->type==REPLICATE){
+					//replicate
+					//data will be key#value#nodeid#ip#port
+					std::vector<string> nodeIdKey=parse(msg->data,'#');
+					replicate(atoi(nodeIdKey[0].c_str()),nodeIdKey[1]);
+					message *msg=new message();
+					msg->type=RESPONSE;
+					msg->data=nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+nodeIdKey[4]+"#success";
 					while(!pastry_api_overlay_in.add_to_queue(msg));
 				}
 			}
@@ -194,6 +224,10 @@ void Pastry_api:: recv_user_thread(){
 			else if(opcode=="routetable"){
 				print("routetable code");
 				overlay.display_table();
+			}
+			else if(opcode=="printDHT"){
+				print("printDHT code");
+				printDHT();
 			}
 			else if(opcode=="quit"){
 				print("quit code");

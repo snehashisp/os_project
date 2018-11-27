@@ -51,6 +51,8 @@ class Pastry_api {
 
 	void putOperation(string key,string value);
 	void getOperation(string key);
+	void printDHT();
+	void replicate(int key, string value);
 
 
 };
