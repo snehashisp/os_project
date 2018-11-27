@@ -1,4 +1,5 @@
 #include "socket_layer.h"
+#include <iostream>
 #define debug(A) printf("%d\n",A)
 using namespace std;
 
@@ -9,11 +10,11 @@ extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
 //Server extracts the nodeid,ip and port from the message sent by the sender using this function.
 string extract_socket_info(string data,int *node_id,string *ip,int *port) {
 
-	string others;
+	char other_data[BUFFER_SIZE];
 	char c_ip[20];//Storing IP address
-	sscanf(data.c_str(),"%d#%[^#]#%d#%s",node_id,c_ip,port,others.c_str());
+	sscanf(data.c_str(),"%d#%[^#]#%d#%s",node_id,c_ip,port,other_data);
 	*ip = string(c_ip);
-	return others;
+	return string(other_data);
 
 }
 
@@ -23,6 +24,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
 	this -> cur_node_id = cur_node_id;
 	this -> cur_ip = ip;
 	this -> cur_port = port;
+	printf("Initializing socket interface on %s %d",ip.c_str(),port);
 
 	if ((incoming_socket = socket(AF_INET,SOCK_STREAM,0)) == 0) {
 		perror("Error creating incoming socket");
@@ -42,7 +44,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
     address.sin_port = port;
     int addrlen = sizeof(address);
 
-    if (bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
+    if (::bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
     	perror("bind failure\n");
     	return 0;
     }
@@ -71,26 +73,31 @@ void Socket_layer :: incoming_conn() {
 			perror("Failed to accept connection");
 		else {
 
+			printf("New connection encountered\n");
 			memset(input_buffer,0,BUFFER_SIZE);
-			read(conn,input_buffer,BUFFER_SIZE);
+			int inp = 0;
+			while(read(conn,input_buffer + inp,1) && input_buffer[inp++] != '|');
+			input_buffer[inp-1] = '\0';
 			string data(input_buffer);
 			int node_id, port;
 			string ip;
 			string payload = extract_socket_info(data,&node_id,&ip,&port);
 			add_ip_port(node_id,ip,port);
 			
-			printf("%s\n",payload.c_str());
+			//printf("%s\n",payload.c_str());
 			recent_conn_mutex.lock();
-			if(recent_conn.insert(pair<int,int>(node_id,conn)).second == false){
-				recent_conn_mutex.unlock();
-				continue;
+			auto p = recent_conn.find(node_id);
+			if(p != recent_conn.end()) {
+				shutdown(p -> second,SHUT_WR);
+				p -> second = conn;
 			} 
+			else recent_conn.insert(pair<int,int>(node_id,conn));
 			recent_conn_mutex.unlock();
 
-			message *new_mem = new message();
-			new_mem -> type = ADD_NODE;
-			new_mem -> data = to_string(node_id);
-			while(!pastry_socket_overlay_in.add_to_queue(new_mem));
+			//message *new_mem = new message();
+			//new_mem -> type = ADD_NODE;
+			//new_mem -> data = to_string(node_id);
+			//while(!pastry_socket_overlay_in.add_to_queue(new_mem));
 
 			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,string(payload.c_str()));
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
@@ -99,6 +106,23 @@ void Socket_layer :: incoming_conn() {
 
 }
 
+void Socket_layer :: remove_ip_port(int nodeid) {
+	
+	socket_mutex.lock();
+	ip_list.erase(nodeid);
+	port_list.erase(nodeid);
+	socket_mutex.unlock();
+
+	recent_conn_mutex.lock();
+	auto p = recent_conn.find(nodeid);
+	if(p != recent_conn.end()) {
+		printf("connection %d closed \n",p -> second);
+		close(p -> second);
+		//printf("%d\n",p -> second);
+		recent_conn.erase(p);
+	}
+	recent_conn_mutex.unlock();
+}
 
 void Socket_layer :: recv_overlay() {
 /*
@@ -133,12 +157,15 @@ void Socket_layer :: add_ip_port(int node_id,string ip,int port) {
 
 
 //This function is used for Client-Setup
+
 int Socket_layer :: send_data(int node_id,string message) {
 
 	int conn;
 	recent_conn_mutex.lock();
 	auto p = recent_conn.find(node_id);
 	recent_conn_mutex.unlock();
+
+	int rtype = (int)message[0] - '0';
 
 	string send_string = "";
 	if(p == recent_conn.end()) {
@@ -166,6 +193,7 @@ int Socket_layer :: send_data(int node_id,string message) {
 
 		    send_string = to_string(cur_node_id) + string("#") + cur_ip + string("#") + to_string((int)address.sin_port) + "#";
 		    thread *recv_thread = new thread(&Socket_layer::recv_node,this,conn,node_id,"");
+
 		    printf("connection established\n");
 
 		}
@@ -174,9 +202,12 @@ int Socket_layer :: send_data(int node_id,string message) {
 	conn = recent_conn[node_id];
 	recent_conn_mutex.unlock();
 
-	send_string = send_string + message;
-	if(write(conn,send_string.c_str(),send_string.size()) == -1) return 0;
-	printf("Sent message %s\n", send_string.c_str());
+	send_string = send_string + message + string("|");
+	if(write(conn,send_string.c_str(),send_string.size()) == -1) {
+		printf("failed to send data\n");
+		return 0;
+	}
+	printf("Sent message to %d type %d \n",node_id,rtype);
 	return 1;
 
 }
@@ -186,31 +217,41 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 	char input_buffer[BUFFER_SIZE];
 	int ret;
 	do {
+		//printf("\n message %s\n", data.c_str());
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
-			//printf("message Received %s\n",mem -> data.c_str());
-			if(mem -> type == PING) {
-				string ping_reply = to_string((int)PING_REPLY) + string("#");
-				write(conn,ping_reply.c_str(),ping_reply.size());
-			}
-			else if(mem -> type == EXIT) {
+			printf("message Received from node %d type %d \n",node_id,mem -> type);
+			if(mem -> type == EXIT) {
 				recent_conn_mutex.lock();
 				recent_conn.erase(node_id);
 				recent_conn_mutex.unlock();
 				close(conn);
 				break;
 			}
-			else if(mem -> type == PUT || mem -> type == GET) {
+			else {
 				while(!pastry_socket_overlay_in.add_to_queue(mem));
 			}
 
 		}
 		data.clear();
-		ret = read(conn,input_buffer,BUFFER_SIZE);
+		//printf("\nhere\n");
+		int ip = 0;
+		//while((ret = read(conn,input_buffer + ip,1)) && input_buffer[ip++] != '|');
+			//printf("%c ",input_buffer[ip-1]);
+		
+		ret = recv(conn,input_buffer,BUFFER_SIZE,MSG_PEEK);
+		if(!ret) break;
+		while(input_buffer[ip++] != '|');
+		input_buffer[ip-1] = '\0';
 		data = string(input_buffer);
+		ret = recv(conn,input_buffer,ip,0);
+		//printf("\nnot halted %s \n ",input_buffer);
+		
+		//input_buffer[ip-1] = '\0';
+		//data = string(input_buffer);
 
 	}while(ret);
-	recent_conn_mutex.lock();
+	recent_conn_mutex.lock();	
 	recent_conn.erase(node_id);
 	recent_conn_mutex.unlock();
 	close(conn);
