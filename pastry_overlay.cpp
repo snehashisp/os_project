@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 void swap(int &a,int &b) {
@@ -17,6 +18,16 @@ void swap(int &a,int &b) {
 extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
 extern Message_queue pastry_socket_overlay_in;
+
+int *get3min(int lset[],int n,int key) {
+
+	int *ret = new int[3];
+	int k = 0;
+	for (int i = 0; i < l_size/2; i++) {
+		
+		
+	}
+}
 
 void print_in_hex(int key,int width) {
 
@@ -212,7 +223,16 @@ void Pastry_overlay :: recv_api_thread() {
 				delete(mess);
 			}
 			else if(mess -> type == REPLICATE) {
-
+				vector <string> tokens; 
+    			stringstream ss(mess -> data); 
+    			string word; 
+    			while(getline(ss, word, '#'))
+        			tokens.push_back(word); 
+        		int node = atoi(tokens[0].c_str()), first_min = INT_MAX, second_min = INT_MAX;
+        		for(int i = 0; i < l_size; i++) {
+        			if(leaf_set[i] == 0 || leaf_set[i] == INT_MAX) continue;
+        			if((int)abs(node - leaf_set[i]) < first_min) 
+        		}
 			}
 		}
 	}
