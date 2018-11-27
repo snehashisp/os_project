@@ -13,7 +13,7 @@
 
 #ifndef SOCKET_LAYER
 #define SOCKET_LAYER
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 2048
 #define DEFAULT_QUEUE 10
 
 

@@ -52,8 +52,8 @@ int main(int argc,char *argv[]) {
     po.init(nodeid,&so);
 
     int iport;
-    cin >> iport;
-    po.initialize_table(ip,iport);
+    cin >> nodeid >> iport;
+    po.initialize_table(nodeid,ip,iport);
 
 
     while(1);

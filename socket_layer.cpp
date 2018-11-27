@@ -75,7 +75,9 @@ void Socket_layer :: incoming_conn() {
 
 			printf("New connection encountered\n");
 			memset(input_buffer,0,BUFFER_SIZE);
-			read(conn,input_buffer,BUFFER_SIZE);
+			int inp = 0;
+			while(read(conn,input_buffer + inp,1) && input_buffer[inp++] != '|');
+			input_buffer[inp-1] = '\0';
 			string data(input_buffer);
 			int node_id, port;
 			string ip;
@@ -84,10 +86,12 @@ void Socket_layer :: incoming_conn() {
 			
 			//printf("%s\n",payload.c_str());
 			recent_conn_mutex.lock();
-			if(recent_conn.insert(pair<int,int>(node_id,conn)).second == false){
-				recent_conn_mutex.unlock();
-				continue;
+			auto p = recent_conn.find(node_id);
+			if(p != recent_conn.end()) {
+				shutdown(p -> second,SHUT_WR);
+				p -> second = conn;
 			} 
+			else recent_conn.insert(pair<int,int>(node_id,conn));
 			recent_conn_mutex.unlock();
 
 			//message *new_mem = new message();
@@ -112,7 +116,9 @@ void Socket_layer :: remove_ip_port(int nodeid) {
 	recent_conn_mutex.lock();
 	auto p = recent_conn.find(nodeid);
 	if(p != recent_conn.end()) {
+		printf("connection %d closed \n",p -> second);
 		close(p -> second);
+		//printf("%d\n",p -> second);
 		recent_conn.erase(p);
 	}
 	recent_conn_mutex.unlock();
@@ -159,6 +165,8 @@ int Socket_layer :: send_data(int node_id,string message) {
 	auto p = recent_conn.find(node_id);
 	recent_conn_mutex.unlock();
 
+	int rtype = (int)message[0] - '0';
+
 	string send_string = "";
 	if(p == recent_conn.end()) {
 
@@ -185,6 +193,7 @@ int Socket_layer :: send_data(int node_id,string message) {
 
 		    send_string = to_string(cur_node_id) + string("#") + cur_ip + string("#") + to_string((int)address.sin_port) + "#";
 		    thread *recv_thread = new thread(&Socket_layer::recv_node,this,conn,node_id,"");
+
 		    printf("connection established\n");
 
 		}
@@ -193,24 +202,26 @@ int Socket_layer :: send_data(int node_id,string message) {
 	conn = recent_conn[node_id];
 	recent_conn_mutex.unlock();
 
-	send_string = send_string + message + string("\n");
+	send_string = send_string + message + string("|");
 	if(write(conn,send_string.c_str(),send_string.size()) == -1) {
 		printf("failed to send data\n");
 		return 0;
 	}
-	printf("Sent message %s\n", send_string.c_str());
+	printf("Sent message to %d type %d \n",node_id,rtype);
 	return 1;
 
 }
 
 void Socket_layer :: recv_node(int conn,int node_id,string data) {
 
+	printf("Thread for %d conn with node id %d created ",conn,node_id);
 	char input_buffer[BUFFER_SIZE];
 	int ret;
 	do {
+		printf("\n GIt this %s\n", data.c_str());
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
-			//printf("message Received %s\n",mem -> data.c_str());
+			printf("message Received from node %d type %d \n",node_id,mem -> type);
 			if(mem -> type == EXIT) {
 				recent_conn_mutex.lock();
 				recent_conn.erase(node_id);
@@ -224,8 +235,22 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 
 		}
 		data.clear();
-		ret = read(conn,input_buffer,BUFFER_SIZE);
+		//printf("\nhere\n");
+		int ip = 0;
+		//while((ret = read(conn,input_buffer + ip,1)) && input_buffer[ip++] != '|');
+			//printf("%c ",input_buffer[ip-1]);
+		
+		ret = recv(conn,input_buffer,BUFFER_SIZE,MSG_PEEK);
+		printf("Buffer %s\n",input_buffer);
+		if(!ret) break;
+		while(input_buffer[ip++] != '|');
+		input_buffer[ip-1] = '\0';
 		data = string(input_buffer);
+		ret = recv(conn,input_buffer,ip,0);
+		//printf("\nnot halted %s \n ",input_buffer);
+		
+		//input_buffer[ip-1] = '\0';
+		//data = string(input_buffer);
 
 	}while(ret);
 	recent_conn_mutex.lock();	

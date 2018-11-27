@@ -81,24 +81,27 @@ int Pastry_overlay :: longest_prefix(int key) {
 
 void Pastry_overlay :: add_to_table(int key) {
 
-
 	if(key > current_node_id && key < leaf_set[l_size -1]) {
-		for(int i = l_size/2; i < l_size; i++) 
+		for(int i = l_size/2; i < l_size; i++) {
+			if (leaf_set[i] == key) return;
 			if (leaf_set[i] > key) {
 				route_mutex.lock();
 				swap(leaf_set[i],key);
 				route_mutex.unlock();
 			}
+		}
 	}
 	else if(key < current_node_id && key > leaf_set[l_size/2-1]) {
-		for(int i = 0; i < l_size/2; i++)
+		for(int i = 0; i < l_size/2; i++) {
+			if (leaf_set[i] == key) return;
 			if (leaf_set[i] < key) {
 				route_mutex.lock();
 				swap(leaf_set[i],key);
 				route_mutex.unlock();
 			}
+		}
 	}
-	if (key != 0 || key != INT_MAX) {
+	if (key != current_node_id && (key != 0 || key != INT_MAX)) {
 
 		int shl = longest_prefix(key);
 		int pos = get_hex_at_pos(key,shl);
@@ -148,6 +151,7 @@ key_type Pastry_overlay :: get_next_route(int key) {
 
 		route_mutex.lock();
 		for(int i = 0; i < l_size; i++) {
+			if(leaf_set[i] == 0 || leaf_set[i] == INT_MAX) continue;
 			if (min_node > ((int)abs(key - leaf_set[i]))) {
 				min_node = (int)abs(key - leaf_set[i]);
 				dest = leaf_set[i];
@@ -207,15 +211,22 @@ void Pastry_overlay :: recv_api_thread() {
 				route(mess);
 				delete(mess);
 			}
+			else if(mess -> type == REPLICATE) {
+
+			}
 		}
 	}
+}
+
+void Pastry_overlay :: repair(message *mess) {
+
 }
 
 void Pastry_overlay :: route(message *mess) {
 
 	int key;
 	sscanf(mess->data.c_str(),"%d#",&key);
-	key = key & ((1 << 17) - 1);
+	key = key & ((1 << 16) - 1);
 	int next_node = get_next_route(key);
 	if(next_node == current_node_id) {
 		//while(!pastry_overlay_api_in.add_to_queue(mess));
@@ -228,7 +239,7 @@ void Pastry_overlay :: route(message *mess) {
 	else {
 
 		string new_message = to_string((int)mess->type) + string("#") + mess -> data.c_str();
-		printf("\nRerouted message %d %s",next_node,new_message.c_str());
+		printf("\nRerouted message %d %s\n",next_node,new_message.c_str());
 		//printf("\nRerouted to %d \n",next_node);
 		if(!sock_layer -> send_data(next_node,new_message)) {
 			remove_from_table(next_node);
@@ -260,7 +271,7 @@ void Pastry_overlay :: update_table_message(message *mess) {
     while(getline(ss, word, '#'))
         tokens.push_back(word); 
     add_to_table(atoi(tokens[0].c_str()));
-    cout << tokens[1];
+    //cout << tokens[1];
     sock_layer -> add_ip_port(atoi(tokens[0].c_str()),string(tokens[1].c_str()),atoi(tokens[2].c_str()));
     //printf("received data %s\n",mess -> data.c_str());
 
@@ -283,13 +294,14 @@ void Pastry_overlay :: update_table_message(message *mess) {
 
 void Pastry_overlay :: recv_socket_thread() {
 
+	printf("Socket overlay thread called ");
 	while(1) {
 		//printf("fsdfdsf\n");
 
 		message *mess;
 		while((mess = pastry_socket_overlay_in.get_from_queue()) != NULL) {
 
-			printf("%d \n", mess -> type);
+			//printf("%d \n", mess -> type);
 
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
@@ -305,7 +317,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				delete(mess);
 
 			}
-			else if(mess -> type == SEND_TABLE || mess -> type == INIT) {
+			else if(mess -> type == SEND_TABLE || mess -> type == INIT || mess -> type == REPAIR) {
 
 				if(check_init == false) {
 					while(!pastry_socket_overlay_in.add_to_queue(mess));
@@ -315,7 +327,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				string ip;
 				int nid, port;
 				sscanf(mess -> data.c_str(),"%d#%[^#]#%d",&nid,ip.c_str(),&port);
-				sock_layer -> add_ip_port(nid,ip,port);
+				sock_layer -> add_ip_port(nid,string(ip.c_str()),port);
 				message *ret_mess = get_table_message();
 				string msg = to_string((int)ret_mess -> type) + string("#") + ret_mess -> data;
 				//printf("\nSending %s\n",ret_mess -> data.c_str());
@@ -343,30 +355,33 @@ void Pastry_overlay :: recv_socket_thread() {
 				while(!mess_queue.empty()) {
 					while(!pastry_socket_overlay_in.add_to_queue(mess_queue.front()));
 					mess_queue.pop();
+
 				}
 				check_init = true;
-				sock_layer -> remove_ip_port(0);
+				//sock_layer -> remove_ip_port(0);
 				printf("Node initialization done\n");
 			}
-				
+			else if(mess -> type == RESPONSE || mess -> type == REPLICATE) {
+				while(!pastry_api_overlay_in.add_to_queue(mess));
+			}
 		}
 
 	}
+	printf("Socket overlay exited\n");
 }
 
-void Pastry_overlay :: initialize_table(std::string ip,int port) {
+void Pastry_overlay :: initialize_table(int nodeid,std::string ip,int port) {
 
-	cout << ip << endl;
-	cout << sock_layer -> cur_ip << endl;
+	
 	if(ip == sock_layer -> cur_ip && port == sock_layer -> cur_port) {
 		printf("Node self initialized\n");
 		check_init = true;
 		return;
 	}
-	sock_layer -> add_ip_port(0,ip,port);
+	sock_layer -> add_ip_port(nodeid,ip,port);
 	string msg = to_string(INIT) + string("#") + to_string(current_node_id) + string("#") 
 		+ sock_layer ->  cur_ip + string("#") + to_string(sock_layer -> cur_port);
-	if(!sock_layer -> send_data(0,msg)) {
+	if(!sock_layer -> send_data(nodeid,msg)) {
 		printf("Failed to contact initialization node\n");
 	}
 	else printf("initialization started\n");
