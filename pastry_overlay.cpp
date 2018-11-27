@@ -19,14 +19,22 @@ extern Message_queue pastry_api_overlay_in, pastry_api_user_in;
 extern Message_queue pastry_overlay_socket_in, pastry_overlay_api_in;
 extern Message_queue pastry_socket_overlay_in;
 
-int *get3min(int lset[],int n,int key) {
+int get3min(int lset[],int n,int **min_arr) {
 
 	int *ret = new int[3];
-	int k = 0;
-	for (int i = 0; i < l_size/2; i++) {
-		
-		
+	int k = 0,i = 0,j = n/2;
+	while(i < n/2 && j < n && k < 3) {
+		if (lset[i] != 0 && lset[i] < lset[j]) {
+			ret[k] = lset[i];
+			k++; i++;
+		}
+		else if (lset[j] < lset[i]) {
+			ret[k] = lset[j];
+			k++; j++; 
+		}
 	}
+	*min_arr = ret;
+	return k;
 }
 
 void print_in_hex(int key,int width) {
@@ -223,16 +231,34 @@ void Pastry_overlay :: recv_api_thread() {
 				delete(mess);
 			}
 			else if(mess -> type == REPLICATE) {
-				vector <string> tokens; 
-    			stringstream ss(mess -> data); 
-    			string word; 
-    			while(getline(ss, word, '#'))
-        			tokens.push_back(word); 
-        		int node = atoi(tokens[0].c_str()), first_min = INT_MAX, second_min = INT_MAX;
-        		for(int i = 0; i < l_size; i++) {
-        			if(leaf_set[i] == 0 || leaf_set[i] == INT_MAX) continue;
-        			if((int)abs(node - leaf_set[i]) < first_min) 
-        		}
+				int *ret;
+				int k = get3min(leaf_set,l_size,&ret);
+				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
+				if(k >= 2) {
+					printf("Sending replicate to %d \n",ret[0]);
+					sock_layer -> send_data(ret[0],data);
+					printf("Sending replicate to %d \n",ret[1]);
+					sock_layer -> send_data(ret[1],data);
+				}
+				else if(k == 1) {
+					printf("Sending replicate to %d \n",ret[0]);
+					sock_layer -> send_data(ret[0],data);
+				}
+			}
+			else if(mess -> type == RE_REPLICATE) {
+				int *ret;
+				int k = get3min(leaf_set,l_size,&ret);
+				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
+				sock_layer -> send_data(ret[k-1],data);
+			}
+			else if(mess -> type == RESPONSE) {
+				int nodeid,port;
+				string ip;
+				string dummy;
+				sscanf(mess -> data.c_str(),"%d#%[^#]#%d#%s",&nodeid,ip.c_str(),&port,dummy.c_str());
+				sock_layer -> add_ip_port(nodeid,ip,port);
+				add_to_table(nodeid);
+				sock_layer -> send_data(nodeid,to_string((int)RESPONSE) + string("#") + mess -> data);
 			}
 		}
 	}
@@ -415,7 +441,7 @@ void Pastry_overlay :: display_table() {
 	printf("\nCurrent Node ");
 	printf(format,current_node_id);
 	printf("\n");
-
+	
 	printf("Leaf Set\n");
 	for(int i = 0; i < l_size; i++) {
 		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0)

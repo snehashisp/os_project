@@ -55,6 +55,7 @@ class Pastry_overlay {
 	void init(int current_node_id,Socket_layer *sl,int l_size = LSIZE,int m_size = MSIZE,int max_rows = MAX_ROWS,int max_cols = MAX_COLS);
 	void recv_api_thread();
 	void recv_socket_thread();
+	void repair(message *mess) ;
 
 
 };

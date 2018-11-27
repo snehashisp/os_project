@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <math.h>
 
+#define MAX_ROWS 4
 using namespace std;
 
 
@@ -38,6 +39,8 @@ class Pastry_api {
 	public:
 	int port=0;	
 	char host[NI_MAXHOST];
+
+	string ip;
 	int nodeId;
 	void init();
 	std::string look_up(int key);
@@ -46,6 +49,10 @@ class Pastry_api {
 	void recv_overlay_thread();
 	void recv_user_thread();
 
+	void putOperation(string key,string value);
+	void getOperation(string key);
+	void printDHT();
+	void replicate(int key, string value);
 
 
 };
