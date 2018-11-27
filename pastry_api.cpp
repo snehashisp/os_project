@@ -72,7 +72,7 @@ void Pastry_api :: recv_overlay_thread(){
 					/* receive from destination */
 					//data will be sourcenodeid#ip#port#value#key
 					std::vector<string> list=parse(msg->data,'#');
-					print("Key= "+list[4]+" value= "+list[3]);
+					print("value= "+list[3]);
 
 				}
 			}
