@@ -253,12 +253,14 @@ void Pastry_overlay :: recv_api_thread() {
 				sock_layer -> send_data(ret[k-1],data);
 			}
 			else if(mess -> type == RESPONSE) {
+				printf(" RESPONSE %s \n",mess -> data.c_str());
 				int nodeid,port;
 				string ip;
 				string dummy;
 				sscanf(mess -> data.c_str(),"%d#%[^#]#%d#%s",&nodeid,ip.c_str(),&port,dummy.c_str());
 				sock_layer -> add_ip_port(nodeid,ip,port);
 				add_to_table(nodeid);
+				printf(" RESPONSE %s \n",mess -> data.c_str());
 				sock_layer -> send_data(nodeid,to_string((int)RESPONSE) + string("#") + mess -> data);
 			}
 		}
@@ -414,7 +416,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				printf("Node initialization done\n");
 			}
 			else if(mess -> type == RESPONSE || mess -> type == REPLICATE) {
-				while(!pastry_api_overlay_in.add_to_queue(mess));
+				while(!pastry_overlay_api_in.add_to_queue(mess));
 			}
 		}
 
