@@ -208,6 +208,7 @@ void Pastry_overlay :: recv_api_thread() {
 		while((mess = pastry_api_overlay_in.get_from_queue()) != NULL) {
 
 			if(mess -> type == PUT || mess -> type == GET) {
+				printf("fsdsfdsf");
 				route(mess);
 				delete(mess);
 			}
@@ -229,10 +230,15 @@ void Pastry_overlay :: route(message *mess) {
 	key = key & ((1 << 16) - 1);
 	int next_node = get_next_route(key);
 	if(next_node == current_node_id) {
-		//while(!pastry_overlay_api_in.add_to_queue(mess));
 		if(mess -> type == INIT) {
 			string msg = to_string((int)INIT_FINAL) + "#";
 			sock_layer -> send_data(key,msg);
+			//delete(mess);
+		}
+		else
+		{
+			//cout<<mess->data<<endl;
+			while(!pastry_overlay_api_in.add_to_queue(mess));
 		}
 		//printf("\nMessage received %s\n",mess->data.c_str());
 	}
@@ -305,7 +311,7 @@ void Pastry_overlay :: recv_socket_thread() {
 
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
-				delete(mess);
+				//delete(mess);
 			}
 			else if(mess -> type == ADD_NODE) {
 
