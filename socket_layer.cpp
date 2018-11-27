@@ -214,11 +214,10 @@ int Socket_layer :: send_data(int node_id,string message) {
 
 void Socket_layer :: recv_node(int conn,int node_id,string data) {
 
-	printf("Thread for %d conn with node id %d created ",conn,node_id);
 	char input_buffer[BUFFER_SIZE];
 	int ret;
 	do {
-		printf("\n GIt this %s\n", data.c_str());
+		//printf("\n message %s\n", data.c_str());
 		if(data.size() > 0) {
 			message *mem = extract_message(data);
 			printf("message Received from node %d type %d \n",node_id,mem -> type);
@@ -241,7 +240,6 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 			//printf("%c ",input_buffer[ip-1]);
 		
 		ret = recv(conn,input_buffer,BUFFER_SIZE,MSG_PEEK);
-		printf("Buffer %s\n",input_buffer);
 		if(!ret) break;
 		while(input_buffer[ip++] != '|');
 		input_buffer[ip-1] = '\0';
