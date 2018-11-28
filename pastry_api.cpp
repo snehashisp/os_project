@@ -53,8 +53,8 @@ void Pastry_api :: recv_overlay_thread(){
 					message *msg=new message();
 					msg->type=RESPONSE;
 					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
-					print(msg->data);
 					while(!pastry_api_overlay_in.add_to_queue(msg));
+
 				}
 				else if(msg->type==REPLICATE){
 					//replicate
@@ -71,7 +71,7 @@ void Pastry_api :: recv_overlay_thread(){
 					/* receive from destination */
 					//data will be sourcenodeid#ip#port#value#key
 					std::vector<string> list=parse(msg->data,'#');
-					print("Key= "+list[4]+" value= "+list[3]);
+					print("value= "+list[3]);
 
 				}
 			}

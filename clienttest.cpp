@@ -31,10 +31,8 @@ int main(int argc,char *argv[]) {
     //     cin>>nodeid >> data;
     //     sl.send_data(nodeid,data);
     // }
-    while(1)
-        {
-            api.recv_user_thread();
-        }
+    api.recv_user_thread();
+    while(1);
 }
 
 /*
@@ -54,8 +52,13 @@ int main(int argc,char *argv[]) {
     int iport;
     cin >> nodeid >> iport;
     po.initialize_table(nodeid,ip,iport);
+<<<<<<< HEAD
 
 
+=======
+
+
+>>>>>>> 66261b25c8ce283d5c2496daf3359e02eb4f5d2d
     while(1);
 }
 */    /*

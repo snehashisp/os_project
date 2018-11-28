@@ -44,7 +44,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
     address.sin_port = port;
     int addrlen = sizeof(address);
 
-    if (bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
+    if (::bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
     	perror("bind failure\n");
     	return 0;
     }
@@ -104,6 +104,24 @@ void Socket_layer :: incoming_conn() {
 		}
 	}
 
+}
+
+string Socket_layer :: get_ip_port(int node_id) {
+
+	string ip,port;
+	socket_mutex.lock();
+	auto i = ip_list.find(node_id);
+	if (i != ip_list.end()) {
+		ip = i -> second;
+	}
+	else ip = "0";
+	auto p = port_list.find(node_id);
+	if (p != port_list.end()) {
+		port = to_string(p -> second);
+	}
+	else port = "0";
+	socket_mutex.unlock();
+	return ip + string("#") + port;
 }
 
 void Socket_layer :: remove_ip_port(int nodeid) {
