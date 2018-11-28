@@ -23,10 +23,10 @@ void Pastry_api :: recv_overlay_thread(){
 				if(msg->type==PUT){
 					//ADD into dht
 					//data format key#value#nodeid#ip#port
-					print("hello");
+					// print("hello");
 					print(msg->data);
 					std::vector<string> keyValue=parse(msg->data,'#');
-					printf("In PUT %s %s\n", keyValue[0].c_str(), keyValue[1].c_str() );
+					// printf("In PUT %s %s\n", keyValue[0].c_str(), keyValue[1].c_str() );
 					add_key_value_pair(atoi(keyValue[0].c_str()),keyValue[1]);
 					replicate(atoi(keyValue[0].c_str()),keyValue[1]);
 
@@ -47,13 +47,13 @@ void Pastry_api :: recv_overlay_thread(){
 					//get value from my lookup
 					//data will be key#sourcenodeid#ip#port
 					std::vector<string> nodeIdKey=parse(msg->data,'#');
-					printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
+					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
-					print(value);
+					// print(value);
 					message *msg=new message();
 					msg->type=RESPONSE;
 					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
-					print(msg->data);
+					// print(msg->data);
 					while(!pastry_api_overlay_in.add_to_queue(msg));
 				}
 				else if(msg->type==REPLICATE){
@@ -71,7 +71,13 @@ void Pastry_api :: recv_overlay_thread(){
 					/* receive from destination */
 					//data will be sourcenodeid#ip#port#value#key
 					std::vector<string> list=parse(msg->data,'#');
-					print("Key= "+list[4]+" value= "+list[3]);
+					if(list[3]!="success"){
+						print("Found Value: "+list[3]);
+					}
+					else{
+						print("Succesully Put.");
+					}
+
 
 				}
 			}
@@ -154,9 +160,9 @@ void Pastry_api :: putOperation(string keystr,string value)
 {
 	int key=atoi(keystr.c_str());
 	key = key & ((1 << 16) - 1);
-	cout<<key<<endl;
+	// cout<<key<<endl;
 	if(key == nodeId){
-		cout<<"Putting here";
+		// cout<<"Putting here";
 		add_key_value_pair(atoi(keystr.c_str()),value);
 	}
 	else
@@ -173,7 +179,7 @@ void Pastry_api :: getOperation(string keystr)
 	int key=atoi(keystr.c_str());
 	key = key & ((1 << 16) - 1);
 	if(key == nodeId){
-		cout<<"Value Found for  "<<keystr<<" : "<<look_up(atoi(keystr.c_str()));
+		cout<<"Value Found:  "<<look_up(atoi(keystr.c_str()));
 	}
 	else
 	{
@@ -193,51 +199,55 @@ void Pastry_api:: recv_user_thread(){
 		if(totalWords>0){
 			string opcode=cli[0];
 			if(opcode=="port"){
-				print("port code");
-				if(totalWords>1)
+				if(totalWords>1){
 					port=atoi(cli[1].c_str());
-					if(!port)
-						print("please provide valid port");
+					if(!port){
+						print("please provide valid port");			
+					}
+					else{
+						print("Port "+ to_string(port) +" assigned succesfully.");					
+					}
+				}
 			}
 			else if(opcode=="create"){
-				print("create code");
+				// print("create code");
 				if(port){
 					nodeId=createNode(port,host);
-					cout<<nodeId;
 					ip=host;
+					print("Node id created "+ to_string(nodeId)+ " with ip "+ ip + " on port "+ to_string(port) );
 					sockets.init(nodeId,ip,port);
 					overlay.init(nodeId,&sockets);
 				}
 			}
 			else if(opcode=="join"){
-				print("join code");
+				// print("join code");
 				if(totalWords>2)
 					overlay.initialize_table(atoi(cli[1].c_str()),cli[2],atoi(cli[3].c_str()));
 			}
 			else if(opcode=="put"){
-				print("put code");
+				// print("put code");
 				if(totalWords>2)
 					putOperation(cli[1],cli[2]);
 			}
 			else if(opcode=="get"){
-				print("get code");
+				// print("get code");
 				if(totalWords>1)
 					getOperation(cli[1]);
 			}
 			else if(opcode=="lset"){
-				print("lset code");
+				// print("lset code");
 				overlay.display_table();
 			}
 			else if(opcode=="nset"){
-				print("nset code");
+				// print("nset code");
 				overlay.display_table();
 			}
 			else if(opcode=="routetable"){
-				print("routetable code");
+				// print("routetable code");
 				overlay.display_table();
 			}
 			else if(opcode=="printDHT"){
-				print("printDHT code");
+				// print("printDHT code");
 				printDHT();
 			}
 			else if(opcode=="quit"){

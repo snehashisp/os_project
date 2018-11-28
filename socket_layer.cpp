@@ -44,7 +44,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
     address.sin_port = port;
     int addrlen = sizeof(address);
 
-    if (bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
+    if (::bind(incoming_socket,(struct sockaddr *)&address,(socklen_t)addrlen) < 0) {
     	perror("bind failure\n");
     	return 0;
     }
