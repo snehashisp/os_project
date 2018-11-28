@@ -231,10 +231,11 @@ void Pastry_overlay :: recv_api_thread() {
 			//cout<<"Inside recv_api_thread"<<endl;
 			//pastry_api_overlay_in.printQueue();
 			if(mess -> type == PUT || mess -> type == GET) {
-				printf("fsdsfdsf");
+				//printf("fsdsfdsf");
 				route(mess);
 				delete(mess);
 			}
+			/*
 			else if(mess -> type == REPLICATE) {
 
 				printf("replicate message received %s\n",mess -> data);
@@ -262,6 +263,7 @@ void Pastry_overlay :: recv_api_thread() {
 				sock_layer -> send_data(ret[k-1],data);
 
 			}
+			*/
 			else if(mess -> type == RESPONSE) {
 				printf(" RESPONSE %s \n",mess -> data.c_str());
 				int nodeid,port;
@@ -331,7 +333,7 @@ message *Pastry_overlay :: get_table_message() {
 		temp = sock_layer -> get_ip_port(neighbour_set[i]);
 		sendstr = sendstr + to_string(neighbour_set[i]) + "#" + temp + "#";
 	}
-	printf("Sending table format %s\n",sendstr.c_str());
+	//printf("Sending table format %s\n",sendstr.c_str());
 	mess -> data = sendstr;
 	return mess;
 }
@@ -346,7 +348,7 @@ void Pastry_overlay :: update_table_message(message *mess) {
     add_to_table(atoi(tokens[0].c_str()));
     //cout << tokens[1];
     sock_layer -> add_ip_port(atoi(tokens[0].c_str()),string(tokens[1].c_str()),atoi(tokens[2].c_str()));
-    printf("received data %s\n",mess -> data.c_str());
+    //printf("received data %s\n",mess -> data.c_str());
 
     //printf("leaf set");
     int tp = 3;
