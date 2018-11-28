@@ -53,8 +53,10 @@ void Pastry_api :: recv_overlay_thread(){
 					message *msg=new message();
 					msg->type=RESPONSE;
 					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
+
 					// print(msg->data);
 					while(!pastry_api_overlay_in.add_to_queue(msg));
+
 				}
 				else if(msg->type==REPLICATE){
 					//replicate
@@ -77,7 +79,6 @@ void Pastry_api :: recv_overlay_thread(){
 					else{
 						print("Succesully Put.");
 					}
-
 
 				}
 			}

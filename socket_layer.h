@@ -48,6 +48,7 @@ class Socket_layer {
 
 	void add_ip_port(int node_id,std::string ip,int port);
 	void remove_ip_port(int node_id);
+	std::string get_ip_port(int node_id);
 	int  send_data(int node_id,std::string message);
 
 	//inititalize 

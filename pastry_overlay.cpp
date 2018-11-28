@@ -24,11 +24,14 @@ int get3min(int lset[],int n,int **min_arr) {
 	int *ret = new int[3];
 	int k = 0,i = 0,j = n/2;
 	while(i < n/2 && j < n && k < 3) {
-		if (lset[i] != 0 && lset[i] < lset[j]) {
+		if (lset[i] == 0 && lset[j] == INT_MAX) 
+			break;
+		else if (lset[j] == INT_MAX || lset[i] < lset[j]) {
 			ret[k] = lset[i];
-			k++; i++;
+			k++; 
+
 		}
-		else if (lset[j] < lset[i]) {
+		else if (lset[i] == 0 || lset[j] < lset[i]) {
 			ret[k] = lset[j];
 			k++; j++; 
 		}
@@ -225,7 +228,8 @@ void Pastry_overlay :: recv_api_thread() {
 
 		message *mess;
 		while((mess = pastry_api_overlay_in.get_from_queue()) != NULL) {
-
+			//cout<<"Inside recv_api_thread"<<endl;
+			//pastry_api_overlay_in.printQueue();
 			if(mess -> type == PUT || mess -> type == GET) {
 				// printf("fsdsfdsf");
 				route(mess);
@@ -304,15 +308,24 @@ void Pastry_overlay :: route(message *mess) {
 message *Pastry_overlay :: get_table_message() {
 
 	message *mess = new message();
+	string temp;
 	mess -> type = RECV_TABLE;
 	string sendstr = to_string(current_node_id) + string("#") + sock_layer -> cur_ip + string("#") + to_string(sock_layer -> cur_port) + "#";
-	for(int i = 0; i < l_size; i++) sendstr = sendstr + to_string(leaf_set[i]) + "#";
-	for(int i = 0; i < max_rows; i++) {
-		for(int j = 0; j < max_cols; j++) 
-			sendstr = sendstr + to_string(route_table[i][j]) + "#";
+	for(int i = 0; i < l_size; i++) {
+		temp = sock_layer -> get_ip_port(leaf_set[i]);
+		sendstr = sendstr + to_string(leaf_set[i]) + "#" + temp + "#";
 	}
-	for(int i = 0; i < m_size; i++) sendstr = sendstr + to_string(neighbour_set[i]) + "#";
-
+	for(int i = 0; i < max_rows; i++) {
+		for(int j = 0; j < max_cols; j++) {
+			temp = sock_layer -> get_ip_port(route_table[i][j]);
+			sendstr = sendstr + to_string(route_table[i][j]) + "#" + temp + "#";
+		}
+	}
+	for(int i = 0; i < m_size; i++) {
+		temp = sock_layer -> get_ip_port(neighbour_set[i]);
+		sendstr = sendstr + to_string(neighbour_set[i]) + "#" + temp + "#";
+	}
+	//printf("Sending table format %s\n",sendstr.c_str());
 	mess -> data = sendstr;
 	return mess;
 }
@@ -333,12 +346,24 @@ void Pastry_overlay :: update_table_message(message *mess) {
     int tp = 3;
     for(int i = 0; i < l_size; i++) {
     	//cout << tokens[tp++] << " ";
-    	add_to_table(atoi(tokens[tp++].c_str()));
+    	int id = atoi(tokens[tp++].c_str());
+    	if(id != 0 && id != INT_MAX) {
+    		add_to_table(id);
+    		string ip = tokens[tp++];
+    		int port = atoi(tokens[tp++].c_str());
+    		sock_layer -> add_ip_port(id,string(ip.c_str()),port);
+    	}
     }
     for(int i = 0; i < max_rows; i++) {
     	for(int j = 0; j < max_cols; j++) {
     		//cout << tokens[tp++] << " ";
-    		add_to_table(atoi(tokens[tp++].c_str()));
+	    	int id = atoi(tokens[tp++].c_str());
+	    	if(id != 0 && id != INT_MAX) {
+	    		add_to_table(id);
+	    		string ip = tokens[tp++];
+	    		int port = atoi(tokens[tp++].c_str());
+	    		sock_layer -> add_ip_port(id,string(ip.c_str()),port);
+	    	}
     	}
     	//cout << endl;
     }
@@ -446,30 +471,44 @@ void Pastry_overlay :: display_table() {
 	char format[10];
 	sprintf(format,"%%0%dX ",max_rows);
 
+	vector<int> nodes;
 	printf("\nCurrent Node ");
 	printf(format,current_node_id);
 	printf("\n");
 	
 	printf("Leaf Set\n");
 	for(int i = 0; i < l_size; i++) {
-		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0)
+		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0) {
 			printf(format,leaf_set[i]);
+			nodes.push_back(leaf_set[i]);
+		}
 		else printf(format,0);
  	}
  	printf("\nRoute Table\n");
  	for(int i = 0; i < max_rows; i++) {
  		for(int j = 0; j < max_cols; j++) {
- 			if(route_table[i][j] != INT_MAX)
+ 			if(route_table[i][j] != INT_MAX){
  				printf(format,route_table[i][j]);
+ 				nodes.push_back(route_table[i][j]);
+ 			}
  			else printf(format,0);
  		}
  		printf("\n");
  	}
  	printf("\nNeighbourhood Table\n");
  	for(int i = 0; i < m_size; i++) {
- 		if(neighbour_set[i] != INT_MAX)
+ 		if(neighbour_set[i] != INT_MAX){
  			printf(format,neighbour_set[i]);
+ 			nodes.push_back(neighbour_set[i]);
+ 		}
  		else printf(format,0);
  	}
  	printf("\n");
+
+ 	printf("Nodes and corresponding ip port mappings \n");
+ 	for(auto i = nodes.begin(); i != nodes.end(); i++) {
+ 		string str = sock_layer -> get_ip_port(*i);
+ 		printf("Node id %d: ip and port (ip # port) : %s\n", *i,str.c_str());
+ 	}
+
 }

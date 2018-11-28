@@ -44,7 +44,7 @@ message *Message_queue :: get_from_queue() {
 message *extract_message(string data) {
 
 	message *new_message = new message;
-	char mess[1024];
+	char mess[3096];
 	sscanf(data.c_str(),"%d#%s",&(new_message -> type),mess);
 	new_message -> data = string(mess);
 	return new_message;
