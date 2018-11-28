@@ -183,7 +183,8 @@ int Socket_layer :: send_data(int node_id,string message) {
 	auto p = recent_conn.find(node_id);
 	recent_conn_mutex.unlock();
 
-	int rtype = (int)message[0] - '0';
+	int rtype;
+	sscanf(message.c_str(),"%d#",&rtype);
 
 	string send_string = "";
 	if(p == recent_conn.end()) {

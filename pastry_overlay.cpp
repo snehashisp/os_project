@@ -26,12 +26,19 @@ int get3min(int lset[],int n,int **min_arr) {
 	while(i < n/2 && j < n && k < 3) {
 		if (lset[i] == 0 && lset[j] == INT_MAX) 
 			break;
-		else if (lset[j] == INT_MAX || lset[i] < lset[j]) {
+		else if (lset[j] == INT_MAX) {
 			ret[k] = lset[i];
-			k++; 
-
+			k++; i++;
 		}
-		else if (lset[i] == 0 || lset[j] < lset[i]) {
+		else if (lset[i] == 0) {
+			ret[k] = lset[j];
+			k++; j++;
+		}
+		else if (lset[i] < lset[j]) {
+			ret[k] = lset[i];
+			k++; i++;
+		}
+		else if (lset[j] < lset[i]) {
 			ret[k] = lset[j];
 			k++; j++; 
 		}
@@ -235,27 +242,28 @@ void Pastry_overlay :: recv_api_thread() {
 				route(mess);
 				delete(mess);
 			}
-			// else if(mess -> type == REPLICATE) {
-			// 	int *ret;
-			// 	int k = get3min(leaf_set,l_size,&ret);
-			// 	string data = to_string((int)REPLICATE) + string("#") + mess -> data;
-			// 	if(k >= 2) {
-			// 		printf("Sending replicate to %d \n",ret[0]);
-			// 		sock_layer -> send_data(ret[0],data);
-			// 		printf("Sending replicate to %d \n",ret[1]);
-			// 		sock_layer -> send_data(ret[1],data);
-			// 	}
-			// 	else if(k == 1) {
-			// 		printf("Sending replicate to %d \n",ret[0]);
-			// 		sock_layer -> send_data(ret[0],data);
-			// 	}
-			// }
-			// else if(mess -> type == RE_REPLICATE) {
-			// 	int *ret;
-			// 	int k = get3min(leaf_set,l_size,&ret);
-			// 	string data = to_string((int)REPLICATE) + string("#") + mess -> data;
-			// 	sock_layer -> send_data(ret[k-1],data);
-			// }
+			else if(mess -> type == REPLICATE) {
+				int *ret;
+				int k = get3min(leaf_set,l_size,&ret);
+				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
+				printf("k = %d\n",k);
+				if(k >= 2) {
+					printf("Sending replicate to %d \n",ret[0]);
+					sock_layer -> send_data(ret[0],data);
+					printf("Sending replicate to %d \n",ret[1]);
+					sock_layer -> send_data(ret[1],data);
+				}
+				else if(k == 1) {
+					printf("Sending replicate to %d \n",ret[0]);
+					sock_layer -> send_data(ret[0],data);
+				}
+			}
+			else if(mess -> type == RE_REPLICATE) {
+				int *ret;
+				int k = get3min(leaf_set,l_size,&ret);
+				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
+				sock_layer -> send_data(ret[k-1],data);
+			}
 			else if(mess -> type == RESPONSE) {
 				// printf(" RESPONSE %s \n",mess -> data.c_str());
 				int nodeid,port;
