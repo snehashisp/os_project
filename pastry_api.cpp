@@ -90,7 +90,9 @@ void Pastry_api:: add_key_value_pair(int key, string value){
 }
 
 string Pastry_api ::  look_up(int key){
-	return dht[key];
+	if(dht.find(key)!=dht.end())
+		return dht[key];
+	return "NuLL";
 }
 
 vector<string> parse(string s, char delim){
@@ -178,10 +180,12 @@ void Pastry_api :: putOperation(string keystr,string value)
 void Pastry_api :: getOperation(string keystr)
 {
 	int key=atoi(keystr.c_str());
-	key = key & ((1 << 16) - 1);
-	if(key == nodeId){
+	// key = key & ((1 << 16) - 1);
+	//if(key == nodeId){
+	
+	string value=look_up(key);
+	if(value!="NuLL")
 		cout<<"Value Found:  "<<look_up(atoi(keystr.c_str()));
-	}
 	else
 	{
 		message *msg =new message();
