@@ -240,7 +240,7 @@ void Pastry_overlay :: recv_api_thread() {
 			if(mess -> type == PUT || mess -> type == GET) {
 				// printf("fsdsfdsf");
 				route(mess);
-				delete(mess);
+				//delete(mess);
 			}
 			else if(mess -> type == REPLICATE) {
 				int *ret;
