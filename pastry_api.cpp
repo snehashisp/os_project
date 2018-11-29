@@ -218,9 +218,9 @@ void Pastry_api:: recv_user_thread(){
 				// print("create code");
 				if(port){
 					nodeId=createNode(port,host);
-					ip=host;
+					ip = string(host);
 					print("Node id created "+ to_string(nodeId)+ " with ip "+ ip + " on port "+ to_string(port) );
-					sockets.init(nodeId,ip,port);
+					sockets.init(nodeId,string(ip.c_str()),port);
 					overlay.init(nodeId,&sockets);
 				}
 			}
