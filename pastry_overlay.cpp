@@ -261,6 +261,7 @@ void Pastry_overlay :: recv_api_thread() {
 			else if(mess -> type == RE_REPLICATE) {
 				int *ret;
 				int k = get3min(leaf_set,l_size,&ret);
+				if (k != 3) continue;
 				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
 				sock_layer -> send_data(ret[k-1],data);
 			}
@@ -309,6 +310,7 @@ void Pastry_overlay :: route(message *mess) {
 		//printf("\nRerouted to %d \n",next_node);
 		if(!sock_layer -> send_data(next_node,new_message)) {
 			remove_from_table(next_node);
+			route(mess);
 		}
 	}
 }
