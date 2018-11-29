@@ -50,10 +50,20 @@ void Pastry_api :: recv_overlay_thread(){
 					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
 					// print(value);
-					message *msg=new message();
-					msg->type=RESPONSE;
-					msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
-
+					if(value!="NuLL")
+					{
+						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()));
+						message *msg=new message();
+						msg->type=RESPONSE;
+						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
+					}
+					else
+					{	//FIND added newly
+						cout<<"Value not Found signal FIND"<<endl;
+						message *msg=new message();
+						msg->type=FIND;
+						msg->data=nodeIdKey[0] + "#" + nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3];	
+					}
 					// print(msg->data);
 					while(!pastry_api_overlay_in.add_to_queue(msg));
 
@@ -80,6 +90,37 @@ void Pastry_api :: recv_overlay_thread(){
 						print("Succesully Put.");
 					}
 
+				}
+				else if (msg->type == FIND)
+				{
+					//FIND value from my lookup
+					//data will be key#sourcenodeid#ip#port
+					std::vector<string> nodeIdKey=parse(msg->data,'#');
+					string value=look_up(atoi(nodeIdKey[0].c_str()));
+					// print(value);
+					if(value!="NuLL")
+					{
+						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()));
+						message *msg=new message();
+						msg->type=RESPONSE;
+						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
+
+						while(!pastry_api_overlay_in.add_to_queue(msg));
+
+						message *msg2=new message();
+						msg2->type=REPLICATE;
+						msg2->data=nodeIdKey[0]+"#"+nodeIdKey[1]+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
+
+						while(!pastry_api_overlay_in.add_to_queue(msg2));
+					}
+					else
+					{
+						cout<<"failed to find"<<endl;
+						message *msg=new message();
+						msg->type=RESPONSE;
+						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+"failed"+"#"+nodeIdKey[0];
+						while(!pastry_api_overlay_in.add_to_queue(msg));
+					}
 				}
 			}
 	}
@@ -167,6 +208,12 @@ void Pastry_api :: putOperation(string keystr,string value)
 	if(key == nodeId){
 		// cout<<"Putting here";
 		add_key_value_pair(atoi(keystr.c_str()),value);
+		printf("Succesully put in self nodeId\n");
+		message *msg2=new message();
+		msg2->type=REPLICATE;
+		msg2->data=keystr+"#"+value+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
+
+		while(!pastry_api_overlay_in.add_to_queue(msg2));
 	}
 	else
 	{
