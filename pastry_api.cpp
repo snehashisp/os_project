@@ -198,6 +198,7 @@ void Pastry_api :: getOperation(string keystr)
 void Pastry_api:: recv_user_thread(){
 	string s;
 	while(1){
+		printf(">>");
 		getline(cin,s);
 		vector<string> cli=parse(s,' ');
 		int totalWords=cli.size();
