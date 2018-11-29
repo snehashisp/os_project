@@ -56,7 +56,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
     }
     else printf("Listening to incoming connections \n");
     incoming_thread = new thread(&Socket_layer :: incoming_conn,this);
-    overlay_thread = new thread(&Socket_layer :: recv_overlay,this);
+   // overlay_thread = new thread(&Socket_layer :: recv_overlay,this);
 
 }	
 
@@ -142,21 +142,10 @@ void Socket_layer :: remove_ip_port(int nodeid) {
 	recent_conn_mutex.unlock();
 }
 
-void Socket_layer :: recv_overlay() {
-/*
-	while(1) {
-
-		message *mess;
-		while((mess = pastry_overlay_socket_in.get_from_queue()) == NULL) {
-
-			string send_mess = to_string((int)mess->type) + string("#") + mess -> data;
-		}
-	}
-*/
-
-}	
 
 void Socket_layer :: add_ip_port(int node_id,string ip,int port) {
+
+	//printf("node id %d ip %s port %d\n",node_id,ip.c_str(),port);
 
 	socket_mutex.lock();
 	auto i = ip_list.find(node_id);
@@ -255,9 +244,9 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 		data.clear();
 		//printf("\nhere\n");
 		int ip = 0;
-		//while((ret = read(conn,input_buffer + ip,1)) && input_buffer[ip++] != '|');
+		while((ret = read(conn,input_buffer + ip,1)) && input_buffer[ip++] != '|');
 			//printf("%c ",input_buffer[ip-1]);
-		
+		/*
 		ret = recv(conn,input_buffer,BUFFER_SIZE,MSG_PEEK);
 		if(!ret) break;
 		while(input_buffer[ip++] != '|');
@@ -265,11 +254,12 @@ void Socket_layer :: recv_node(int conn,int node_id,string data) {
 		data = string(input_buffer);
 		ret = recv(conn,input_buffer,ip,0);
 		//printf("\nnot halted %s \n ",input_buffer);
-		
-		//input_buffer[ip-1] = '\0';
-		//data = string(input_buffer);
+		*/
+		input_buffer[ip-1] = '\0';
+		data = string(input_buffer);
 
 	}while(ret);
+
 	recent_conn_mutex.lock();	
 	recent_conn.erase(node_id);
 	recent_conn_mutex.unlock();

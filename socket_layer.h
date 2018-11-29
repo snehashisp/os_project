@@ -23,7 +23,7 @@ std::string extract_socket_info(std::string data,int *node_id,std::string *ip,in
 class Socket_layer {
 
 	std::thread *incoming_thread;
-	std::thread *overlay_thread;
+	//std::thread *overlay_thread;
 	//incoming sockets
 	int incoming_socket;
 	struct sockaddr_in address;

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 
+
 using namespace std;
 void swap(int &a,int &b) {
 	int temp = a;
@@ -271,7 +272,7 @@ void Pastry_overlay :: recv_api_thread() {
 				string ip;
 				string dummy;
 				sscanf(mess -> data.c_str(),"%d#%[^#]#%d#%s",&nodeid,ip.c_str(),&port,dummy.c_str());
-				sock_layer -> add_ip_port(nodeid,ip,port);
+				sock_layer -> add_ip_port(nodeid,string(ip.c_str()),port);
 				add_to_table(nodeid);
 				printf(" RESPONSE %s \n",mess -> data.c_str());
 				sock_layer -> send_data(nodeid,to_string((int)RESPONSE) + string("#") + mess -> data);
@@ -323,17 +324,17 @@ message *Pastry_overlay :: get_table_message() {
 	string sendstr = to_string(current_node_id) + string("#") + sock_layer -> cur_ip + string("#") + to_string(sock_layer -> cur_port) + "#";
 	for(int i = 0; i < l_size; i++) {
 		temp = sock_layer -> get_ip_port(leaf_set[i]);
-		sendstr = sendstr + to_string(leaf_set[i]) + "#" + temp + "#";
+		sendstr = sendstr + to_string(leaf_set[i] == INT_MAX ? 0 : leaf_set[i]) + "#" + temp + "#";
 	}
 	for(int i = 0; i < max_rows; i++) {
 		for(int j = 0; j < max_cols; j++) {
 			temp = sock_layer -> get_ip_port(route_table[i][j]);
-			sendstr = sendstr + to_string(route_table[i][j]) + "#" + temp + "#";
+			sendstr = sendstr + to_string(route_table[i][j] == INT_MAX ? 0 : route_table[i][j]) + "#" + temp + "#";
 		}
 	}
 	for(int i = 0; i < m_size; i++) {
 		temp = sock_layer -> get_ip_port(neighbour_set[i]);
-		sendstr = sendstr + to_string(neighbour_set[i]) + "#" + temp + "#";
+		sendstr = sendstr + to_string(neighbour_set[i] == INT_MAX ? 0 : neighbour_set[i]) + "#" + temp + "#";
 	}
 	//printf("Sending table format %s\n",sendstr.c_str());
 	mess -> data = sendstr;
