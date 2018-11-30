@@ -50,12 +50,14 @@ void Pastry_api :: recv_overlay_thread(){
 					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
 					// print(value);
+
 					if(value!="NuLL")
 					{
-						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()));
+						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()))<<endl;
 						message *msg=new message();
 						msg->type=RESPONSE;
 						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
+						while(!pastry_api_overlay_in.add_to_queue(msg));
 					}
 					else
 					{	//FIND added newly
@@ -63,9 +65,9 @@ void Pastry_api :: recv_overlay_thread(){
 						message *msg=new message();
 						msg->type=FIND;
 						msg->data=nodeIdKey[0] + "#" + nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3];	
+						while(!pastry_api_overlay_in.add_to_queue(msg));
 					}
 					// print(msg->data);
-					while(!pastry_api_overlay_in.add_to_queue(msg));
 
 				}
 				else if(msg->type==REPLICATE){
@@ -109,7 +111,7 @@ void Pastry_api :: recv_overlay_thread(){
 
 						message *msg2=new message();
 						msg2->type=REPLICATE;
-						msg2->data=nodeIdKey[0]+"#"+nodeIdKey[1]+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
+						msg2->data=nodeIdKey[0]+"#"+value+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
 
 						while(!pastry_api_overlay_in.add_to_queue(msg2));
 					}

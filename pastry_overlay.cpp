@@ -290,6 +290,7 @@ void Pastry_overlay :: route(message *mess) {
 	int key;
 	sscanf(mess->data.c_str(),"%d#",&key);
 	key = key & ((1 << 16) - 1);
+	if (mess -> type == INIT) remove_from_table(key);
 	int next_node = get_next_route(key);
 	if(next_node == current_node_id) {
 		if(mess -> type == INIT) {
