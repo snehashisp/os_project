@@ -290,6 +290,7 @@ void Pastry_overlay :: route(message *mess) {
 	int key;
 	sscanf(mess->data.c_str(),"%d#",&key);
 	key = key & ((1 << 16) - 1);
+	if (mess -> type == INIT) remove_from_table(key);
 	int next_node = get_next_route(key);
 	if(next_node == current_node_id) {
 		if(mess -> type == INIT) {
@@ -451,7 +452,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				//sock_layer -> remove_ip_port(0);
 				printf("Node initialization done\n");
 			}
-			else if(mess -> type == RESPONSE || mess -> type == REPLICATE) {
+			else if(mess -> type == RESPONSE || mess -> type == REPLICATE || FIND) {
 				while(!pastry_overlay_api_in.add_to_queue(mess));
 			}
 		}

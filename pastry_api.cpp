@@ -18,7 +18,7 @@ void Pastry_api :: replicate(int key, string value){
 
 void Pastry_api :: recv_overlay_thread(){
 	while(1){
-			message *msg=pastry_overlay_api_in.get_from_queue();
+			message *msg = pastry_overlay_api_in.get_from_queue();
 			if(msg){
 				if(msg->type==PUT){
 					//ADD into dht
@@ -56,6 +56,7 @@ void Pastry_api :: recv_overlay_thread(){
 						message *msg=new message();
 						msg->type=RESPONSE;
 						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
+						while(!pastry_api_overlay_in.add_to_queue(msg));
 					}
 					else
 					{	//FIND added newly
@@ -63,9 +64,9 @@ void Pastry_api :: recv_overlay_thread(){
 						message *msg=new message();
 						msg->type=FIND;
 						msg->data=nodeIdKey[0] + "#" + nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3];	
+						while(!pastry_api_overlay_in.add_to_queue(msg));
 					}
 					// print(msg->data);
-					while(!pastry_api_overlay_in.add_to_queue(msg));
 
 				}
 				else if(msg->type==REPLICATE){
@@ -109,7 +110,7 @@ void Pastry_api :: recv_overlay_thread(){
 
 						message *msg2=new message();
 						msg2->type=REPLICATE;
-						msg2->data=nodeIdKey[0]+"#"+nodeIdKey[1]+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
+						msg2->data=nodeIdKey[0]+"#"+value+"#"+to_string(nodeId)+"#"+ip+"#"+to_string(port);
 
 						while(!pastry_api_overlay_in.add_to_queue(msg2));
 					}
