@@ -24,13 +24,14 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
 	this -> cur_node_id = cur_node_id;
 	this -> cur_ip = ip;
 	this -> cur_port = port;
-	printf("Initializing socket interface on %s %d",ip.c_str(),port);
+	printf("Initializing Socket layer......\n");
+	printf("\n Initializing socket interface on %s %d",ip.c_str(),port);
 
 	if ((incoming_socket = socket(AF_INET,SOCK_STREAM,0)) == 0) {
 		perror("Error creating incoming socket");
 		return 0;
 	}
-	else printf("Created Incoming socket\n");
+	else printf("\nCreated Incoming socket\n");
 
 	int opt = 1;
 	if (setsockopt(incoming_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) 
@@ -101,6 +102,7 @@ void Socket_layer :: incoming_conn() {
 
 			thread *recv_thread = new thread(&Socket_layer :: recv_node,this,conn,node_id,string(payload.c_str()));
 			printf("pastry connection established with %d %s \n",node_id,ip.c_str());
+
 		}
 	}
 

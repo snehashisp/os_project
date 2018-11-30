@@ -50,9 +50,10 @@ void Pastry_api :: recv_overlay_thread(){
 					// printf("In GET %s %s\n", nodeIdKey[0].c_str(), nodeIdKey[1].c_str() );
 					string value=look_up(atoi(nodeIdKey[0].c_str()));
 					// print(value);
+
 					if(value!="NuLL")
 					{
-						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()));
+						cout<<"Value Found:  "<<look_up(atoi(nodeIdKey[0].c_str()))<<endl;
 						message *msg=new message();
 						msg->type=RESPONSE;
 						msg->data=nodeIdKey[1]+"#"+nodeIdKey[2]+"#"+nodeIdKey[3]+"#"+value+"#"+nodeIdKey[0];
@@ -243,7 +244,22 @@ void Pastry_api :: getOperation(string keystr)
 	}
 }
 
-void Pastry_api:: recv_user_thread(){
+void Pastry_api :: replicateOperation()
+{
+	map<int,std::string>::iterator itr;
+	int count = 0;
+	for(itr = dht.begin();itr != dht.end();itr++)
+	{
+		message *msg =new message();
+		msg->type = RE_REPLICATE;
+		msg->data = to_string(itr->first) + '#' + itr->second + '#'+ to_string(nodeId)+ '#' + ip +'#' +to_string(port);
+		while(!pastry_api_overlay_in.add_to_queue(msg));
+		count++;
+	}
+	printf(" Total values replicated from DHT%d\n", count);
+}
+
+int Pastry_api:: recv_user_thread(){
 	string s;
 	while(1){
 		printf(">>");
@@ -265,10 +281,13 @@ void Pastry_api:: recv_user_thread(){
 			}
 			else if(opcode=="create"){
 				// print("create code");
+
 				if(port){
 					nodeId=createNode(port,host);
 					ip = string(host);
-					print("Node id created "+ to_string(nodeId)+ " with ip "+ ip + " on port "+ to_string(port) );
+					printf("\n API Layer\n");
+					print("\n Node id created "+ to_string(nodeId)+ " with ip "+ ip + " on port "+ to_string(port) );
+					printf("*****************************************\n");
 					sockets.init(nodeId,string(ip.c_str()),port);
 					overlay.init(nodeId,&sockets);
 				}
@@ -277,6 +296,7 @@ void Pastry_api:: recv_user_thread(){
 				// print("join code");
 				if(totalWords>2)
 					overlay.initialize_table(atoi(cli[1].c_str()),cli[2],atoi(cli[3].c_str()));
+				printf("\n*****************************************\n");
 			}
 			else if(opcode=="put"){
 				// print("put code");
@@ -305,7 +325,10 @@ void Pastry_api:: recv_user_thread(){
 				printDHT();
 			}
 			else if(opcode=="quit"){
-				print("quit code");
+				//print("quit code");
+				replicateOperation();
+				printf("\n Node Quit Pastry Network!!\n");
+				break;
 			}
 			else if(opcode=="shutdown"){
 				print("shutdown code");
@@ -318,5 +341,5 @@ void Pastry_api:: recv_user_thread(){
 			print("Please provide some command")
 
 	}
-	
+	return 0;
 }

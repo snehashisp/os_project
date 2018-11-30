@@ -392,6 +392,13 @@ void Pastry_overlay :: update_table_message(message *mess) {
 
 void Pastry_overlay :: recv_socket_thread() {
 
+// <<<<<<< HEAD
+// =======
+// 	printf("\n*****************************************\n");
+// 	printf("\nInitializing Overlay layer.........\n");
+// 	printf("\nSocket overlay thread Started\n ");
+// 	printf("\n*****************************************\n");
+// >>>>>>> fbf28139d502c1fbcf7d99cc6a7a81185b4503eb
 	while(1) {
 		//printf("fsdfdsf\n");
 
@@ -480,7 +487,8 @@ void Pastry_overlay :: display_table(int part) {
 	sprintf(format,"%%0%dX ",max_rows);
 
 	vector<int> nodes;
-	printf("\nCurrent Node ");
+	printf("\nCurrent Node\n");
+	printf("\n*************************************\n");
 	printf(format,current_node_id);
 	printf("\n");
 	
@@ -518,6 +526,7 @@ void Pastry_overlay :: display_table(int part) {
 	 	}
 	 	printf("\n");
 	}
+
  	printf("Nodes and corresponding ip port mappings \n");
  	for(auto i = nodes.begin(); i != nodes.end(); i++) {
  		string str = sock_layer -> get_ip_port(*i);
