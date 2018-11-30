@@ -290,15 +290,15 @@ void Pastry_api:: recv_user_thread(){
 			}
 			else if(opcode=="lset"){
 				// print("lset code");
-				overlay.display_table();
+				overlay.display_table(DLSET);
 			}
 			else if(opcode=="nset"){
 				// print("nset code");
-				overlay.display_table();
+				overlay.display_table(DNSET);
 			}
 			else if(opcode=="routetable"){
 				// print("routetable code");
-				overlay.display_table();
+				overlay.display_table(DRSET);
 			}
 			else if(opcode=="printDHT"){
 				// print("printDHT code");

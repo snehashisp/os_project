@@ -65,7 +65,7 @@ int Socket_layer :: init(int cur_node_id,string ip, int port) {
 void Socket_layer :: incoming_conn() {
 
 	char input_buffer[BUFFER_SIZE];
-    printf("listen thread running \n");
+    //printf("listen thread running \n");
 	while(1) {
 
 		int conn = accept(incoming_socket, NULL,NULL);

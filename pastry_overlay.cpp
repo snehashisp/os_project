@@ -141,7 +141,7 @@ void Pastry_overlay :: add_to_table(int key) {
 	}
 }
 
-void Pastry_overlay :: remove_from_table(int key) {
+int Pastry_overlay :: remove_from_table(int key) {
 
 	if(key > current_node_id && key < leaf_set[l_size -1]) {
 		for(int i = l_size/2; i < l_size; i++) 
@@ -150,6 +150,7 @@ void Pastry_overlay :: remove_from_table(int key) {
 				leaf_set[i] = INT_MAX;
 				sort(leaf_set + l_size/2,leaf_set + l_size);
 				route_mutex.unlock();
+				return 1;
 			}
 
 	}
@@ -160,6 +161,7 @@ void Pastry_overlay :: remove_from_table(int key) {
 				leaf_set[i] = 0;
 				sort(leaf_set,leaf_set + l_size/2,greater<int>());
 				route_mutex.unlock();
+				return 2;
 			}
 	}
 	else {
@@ -167,10 +169,13 @@ void Pastry_overlay :: remove_from_table(int key) {
 		int shl = longest_prefix(key);
 		int pos = get_hex_at_pos(key,shl);
 		route_mutex.lock();
-		if(route_table[shl][pos] == key) route_table[shl][pos] = INT_MAX;
+		if(route_table[shl][pos] == key) {
+			route_table[shl][pos] = INT_MAX;
+			return 3;
+		}
 		route_mutex.unlock();
 	}
-
+	return 0;
 }
 
 key_type Pastry_overlay :: get_next_route(int key) {
@@ -333,10 +338,12 @@ message *Pastry_overlay :: get_table_message() {
 			sendstr = sendstr + to_string(route_table[i][j] == INT_MAX ? 0 : route_table[i][j]) + "#" + temp + "#";
 		}
 	}
+	/*
 	for(int i = 0; i < m_size; i++) {
 		temp = sock_layer -> get_ip_port(neighbour_set[i]);
 		sendstr = sendstr + to_string(neighbour_set[i] == INT_MAX ? 0 : neighbour_set[i]) + "#" + temp + "#";
 	}
+	*/
 	//printf("Sending table format %s\n",sendstr.c_str());
 	mess -> data = sendstr;
 	return mess;
@@ -380,12 +387,11 @@ void Pastry_overlay :: update_table_message(message *mess) {
     	//cout << endl;
     }
     printf("Updated table \n");
-    display_table();
+    //display_table(DLSET | DRSET | DNSET);
 }
 
 void Pastry_overlay :: recv_socket_thread() {
 
-	printf("Socket overlay thread called\n ");
 	while(1) {
 		//printf("fsdfdsf\n");
 
@@ -397,16 +403,6 @@ void Pastry_overlay :: recv_socket_thread() {
 			if(mess -> type == PUT || mess -> type == GET) {
 				route(mess);
 				//delete(mess);
-			}
-			else if(mess -> type == ADD_NODE) {
-
-				int nodeid;
-				sscanf(mess->data.c_str(),"%d",&nodeid);
-				add_to_table(nodeid);
-				// printf("Added %d to table\n",nodeid);
-				display_table();
-				delete(mess);
-
 			}
 			else if(mess -> type == SEND_TABLE || mess -> type == INIT || mess -> type == REPAIR) {
 
@@ -458,7 +454,6 @@ void Pastry_overlay :: recv_socket_thread() {
 		}
 
 	}
-	printf("Socket overlay exited\n");
 }
 
 void Pastry_overlay :: initialize_table(int nodeid,std::string ip,int port) {
@@ -469,6 +464,7 @@ void Pastry_overlay :: initialize_table(int nodeid,std::string ip,int port) {
 		check_init = true;
 		return;
 	}
+	neighbour_set[0] = nodeid;
 	sock_layer -> add_ip_port(nodeid,ip,port);
 	string msg = to_string(INIT) + string("#") + to_string(current_node_id) + string("#") 
 		+ sock_layer ->  cur_ip + string("#") + to_string(sock_layer -> cur_port);
@@ -478,7 +474,7 @@ void Pastry_overlay :: initialize_table(int nodeid,std::string ip,int port) {
 	// else printf("initialization started\n");
 }
 
-void Pastry_overlay :: display_table() {
+void Pastry_overlay :: display_table(int part) {
 
 	char format[10];
 	sprintf(format,"%%0%dX ",max_rows);
@@ -488,35 +484,40 @@ void Pastry_overlay :: display_table() {
 	printf(format,current_node_id);
 	printf("\n");
 	
-	printf("Leaf Set\n");
-	for(int i = 0; i < l_size; i++) {
-		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0) {
-			printf(format,leaf_set[i]);
-			nodes.push_back(leaf_set[i]);
-		}
-		else printf(format,0);
- 	}
- 	printf("\nRoute Table\n");
- 	for(int i = 0; i < max_rows; i++) {
- 		for(int j = 0; j < max_cols; j++) {
- 			if(route_table[i][j] != INT_MAX){
- 				printf(format,route_table[i][j]);
- 				nodes.push_back(route_table[i][j]);
- 			}
- 			else printf(format,0);
- 		}
- 		printf("\n");
- 	}
- 	printf("\nNeighbourhood Table\n");
- 	for(int i = 0; i < m_size; i++) {
- 		if(neighbour_set[i] != INT_MAX){
- 			printf(format,neighbour_set[i]);
- 			nodes.push_back(neighbour_set[i]);
- 		}
- 		else printf(format,0);
- 	}
- 	printf("\n");
-
+	if(part & DLSET) {
+		printf("Leaf Set\n");
+		for(int i = 0; i < l_size; i++) {
+			if(leaf_set[i] != INT_MAX && leaf_set[i] != 0) {
+				printf(format,leaf_set[i]);
+				nodes.push_back(leaf_set[i]);
+			}
+			else printf(format,0);
+	 	}
+	}
+	if(part & DRSET) {
+	 	printf("\nRoute Table\n");
+	 	for(int i = 0; i < max_rows; i++) {
+	 		for(int j = 0; j < max_cols; j++) {
+	 			if(route_table[i][j] != INT_MAX){
+	 				printf(format,route_table[i][j]);
+	 				nodes.push_back(route_table[i][j]);
+	 			}
+	 			else printf(format,0);
+	 		}
+	 		printf("\n");
+	 	}
+	}
+	if(part & DNSET) {
+	 	printf("\nNeighbourhood Table\n");
+	 	for(int i = 0; i < m_size; i++) {
+	 		if(neighbour_set[i] != INT_MAX){
+	 			printf(format,neighbour_set[i]);
+	 			nodes.push_back(neighbour_set[i]);
+	 		}
+	 		else printf(format,0);
+	 	}
+	 	printf("\n");
+	}
  	printf("Nodes and corresponding ip port mappings \n");
  	for(auto i = nodes.begin(); i != nodes.end(); i++) {
  		string str = sock_layer -> get_ip_port(*i);
