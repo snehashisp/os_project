@@ -18,7 +18,7 @@ void Pastry_api :: replicate(int key, string value){
 
 void Pastry_api :: recv_overlay_thread(){
 	while(1){
-			message *msg=pastry_overlay_api_in.get_from_queue();
+			message *msg = pastry_overlay_api_in.get_from_queue();
 			if(msg){
 				if(msg->type==PUT){
 					//ADD into dht

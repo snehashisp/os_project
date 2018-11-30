@@ -243,19 +243,19 @@ void Pastry_overlay :: recv_api_thread() {
 				route(mess);
 				//delete(mess);
 			}
-			else if(mess -> type == REPLICATE) {
+			else if(mess -> type == REPLICATE || mess -> type == FIND) {
 				int *ret;
 				int k = get3min(leaf_set,l_size,&ret);
-				string data = to_string((int)REPLICATE) + string("#") + mess -> data;
+				string data = to_string((int)mess -> type) + string("#") + mess -> data;
 				printf("k = %d\n",k);
 				if(k >= 2) {
-					printf("Sending replicate to %d \n",ret[0]);
+					//printf("Sending replicate to %d \n",ret[0]);
 					sock_layer -> send_data(ret[0],data);
-					printf("Sending replicate to %d \n",ret[1]);
+					//printf("Sending replicate to %d \n",ret[1]);
 					sock_layer -> send_data(ret[1],data);
 				}
 				else if(k == 1) {
-					printf("Sending replicate to %d \n",ret[0]);
+					//printf("Sending replicate to %d \n",ret[0]);
 					sock_layer -> send_data(ret[0],data);
 				}
 			}
@@ -452,7 +452,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				//sock_layer -> remove_ip_port(0);
 				printf("Node initialization done\n");
 			}
-			else if(mess -> type == RESPONSE || mess -> type == REPLICATE) {
+			else if(mess -> type == RESPONSE || mess -> type == REPLICATE || FIND) {
 				while(!pastry_overlay_api_in.add_to_queue(mess));
 			}
 		}
