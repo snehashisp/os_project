@@ -385,7 +385,10 @@ void Pastry_overlay :: update_table_message(message *mess) {
 
 void Pastry_overlay :: recv_socket_thread() {
 
-	printf("Socket overlay thread called\n ");
+	printf("\n*****************************************\n");
+	printf("\nInitializing Overlay layer.........\n");
+	printf("\nSocket overlay thread Started\n ");
+	printf("\n*****************************************\n");
 	while(1) {
 		//printf("fsdfdsf\n");
 
@@ -484,11 +487,12 @@ void Pastry_overlay :: display_table() {
 	sprintf(format,"%%0%dX ",max_rows);
 
 	vector<int> nodes;
-	printf("\nCurrent Node ");
+	printf("\nCurrent Node\n");
+	printf("\n*************************************\n");
 	printf(format,current_node_id);
 	printf("\n");
 	
-	printf("Leaf Set\n");
+	printf("\nLeaf Set\n");
 	for(int i = 0; i < l_size; i++) {
 		if(leaf_set[i] != INT_MAX && leaf_set[i] != 0) {
 			printf(format,leaf_set[i]);
@@ -496,7 +500,7 @@ void Pastry_overlay :: display_table() {
 		}
 		else printf(format,0);
  	}
- 	printf("\nRoute Table\n");
+ 	printf("\n\nRoute Table\n");
  	for(int i = 0; i < max_rows; i++) {
  		for(int j = 0; j < max_cols; j++) {
  			if(route_table[i][j] != INT_MAX){
@@ -507,7 +511,7 @@ void Pastry_overlay :: display_table() {
  		}
  		printf("\n");
  	}
- 	printf("\nNeighbourhood Table\n");
+ 	printf("\n\nNeighbourhood Table\n");
  	for(int i = 0; i < m_size; i++) {
  		if(neighbour_set[i] != INT_MAX){
  			printf(format,neighbour_set[i]);
@@ -516,7 +520,7 @@ void Pastry_overlay :: display_table() {
  		else printf(format,0);
  	}
  	printf("\n");
-
+ 	printf("\n*************************************\n");
  	printf("Nodes and corresponding ip port mappings \n");
  	for(auto i = nodes.begin(); i != nodes.end(); i++) {
  		string str = sock_layer -> get_ip_port(*i);

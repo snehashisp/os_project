@@ -31,6 +31,7 @@ class Message_queue {
 	message *get_from_queue();
 
 	//Take care before calling this because it pop out the elements from the queue
+	int get_size_queue();
 	void printQueue();
 
 };

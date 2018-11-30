@@ -15,7 +15,7 @@ using namespace std;
 int main(int argc,char *argv[]) {
     Pastry_api api;
     api.init();
-
+    int close=1;
 
     // message *msg=new message();
     // msg->type=PUT;
@@ -31,48 +31,12 @@ int main(int argc,char *argv[]) {
     //     cin>>nodeid >> data;
     //     sl.send_data(nodeid,data);
     // }
-    api.recv_user_thread();
-    while(1);
+    
+    while(1)
+        {
+            close = api.recv_user_thread();
+            if(close == 0 && pastry_api_overlay_in.get_size_queue()==0 && pastry_socket_overlay_in.get_size_queue()==0 && pastry_overlay_socket_in.get_size_queue()==0 && pastry_overlay_api_in.get_size_queue()==0)
+                break;
+        }
 }
-
-/*
-int main(int argc,char *argv[]) {
-
-
-    Pastry_overlay po;
-    Socket_layer so;
-
-    int nodeid = atoi(argv[1]);
-    int port = atoi(argv[3]);
-    string ip = string(argv[2]);
-    //node id ip port
-    so.init(nodeid,string(ip.c_str()),port);
-    po.init(nodeid,&so);
-
-    int iport;
-    cin >> nodeid >> iport;
-    po.initialize_table(nodeid,ip,iport);
-<<<<<<< HEAD
-
-
-=======
-
-
->>>>>>> 66261b25c8ce283d5c2496daf3359e02eb4f5d2d
-    while(1);
-}
-*/    /*
-    cin >> nodeid >> port2;
-    so.add_ip_port(nodeid,"0.0.0.0",port2);
-    so.send_data(nodeid,"1#data");
-
-    message *mem = new message();
-    mem -> type = PUT;
-    string data;
-    cin >> data;
-    mem -> data = data;
-    while(!pastry_api_overlay_in.add_to_queue(mem));
-    while(1);
-<<<<<<< HEAD
-    */
 

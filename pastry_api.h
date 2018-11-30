@@ -47,13 +47,13 @@ class Pastry_api {
 	void add_key_value_pair(int key,std::string value);
 	void delete_key_value_pair(int key);
 	void recv_overlay_thread();
-	void recv_user_thread();
+	int recv_user_thread();
 
 	void putOperation(string key,string value);
 	void getOperation(string key);
 	void printDHT();
 	void replicate(int key, string value);
-
+	void replicateOperation();
 
 };
 

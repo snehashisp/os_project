@@ -15,6 +15,11 @@ void Message_queue :: printQueue(){
 	}
 }
 
+int Message_queue :: get_size_queue()
+{
+	return this->m_queue.size();
+}
+
 int Message_queue ::  add_to_queue(message *m) {
 
 	if(lock.try_lock()) {
