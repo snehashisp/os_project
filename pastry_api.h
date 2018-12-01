@@ -35,6 +35,7 @@ class Pastry_api {
 	Socket_layer sockets;
 
 	std::map<int,std::string> dht;
+	int status = 1;
 
 	public:
 	int port=0;	

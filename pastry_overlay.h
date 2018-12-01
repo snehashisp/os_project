@@ -48,6 +48,7 @@ class Pastry_overlay {
 	void route(message *mess);
 	message *get_table_message();
 	void update_table_message(message *mess);
+	void shutdown();
 	//public:
 
 	key_type get_next_route(int key);

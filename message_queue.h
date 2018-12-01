@@ -9,8 +9,9 @@
 //Types of messages
 
 enum msg_type {EXIT, SEND_TABLE, RECV_TABLE, ADD_NODE, INIT, INIT_FINAL,
-	PUT, GET, LSET, NSET, QUIT, SHUTDOWN, RESPONSE, RE_REPLICATE, REPLICATE, REPAIR,FIND};
+	PUT, GET, LSET, NSET, QUIT, SHUTDOWN, RESPONSE, RE_REPLICATE, REPLICATE, FIND};
 
+//std::string get_message(msg_type);
 
 struct message {
 

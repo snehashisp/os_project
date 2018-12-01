@@ -124,6 +124,10 @@ void Pastry_api :: recv_overlay_thread(){
 						while(!pastry_api_overlay_in.add_to_queue(msg));
 					}
 				}
+				else if (msg -> type == SHUTDOWN) {
+					status = 0;
+					exit(0);
+				}
 			}
 	}
 }
@@ -261,7 +265,7 @@ void Pastry_api :: replicateOperation()
 
 int Pastry_api:: recv_user_thread(){
 	string s;
-	while(1){
+	while(status){
 		printf(">>");
 		getline(cin,s);
 		vector<string> cli=parse(s,' ');
@@ -331,7 +335,9 @@ int Pastry_api:: recv_user_thread(){
 				break;
 			}
 			else if(opcode=="shutdown"){
-				print("shutdown code");
+				//print("shutdown code");
+				overlay.shutdown();
+				exit(0);
 			}
 			else{
 				print("Invalid command");

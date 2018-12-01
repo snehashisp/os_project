@@ -286,9 +286,6 @@ void Pastry_overlay :: recv_api_thread() {
 	}
 }
 
-void Pastry_overlay :: repair(message *mess) {
-
-}
 
 void Pastry_overlay :: route(message *mess) {
 
@@ -411,7 +408,7 @@ void Pastry_overlay :: recv_socket_thread() {
 				route(mess);
 				//delete(mess);
 			}
-			else if(mess -> type == SEND_TABLE || mess -> type == INIT || mess -> type == REPAIR) {
+			else if(mess -> type == SEND_TABLE || mess -> type == INIT) {
 
 				if(check_init == false) {
 					while(!pastry_socket_overlay_in.add_to_queue(mess));
@@ -455,12 +452,26 @@ void Pastry_overlay :: recv_socket_thread() {
 				//sock_layer -> remove_ip_port(0);
 				printf("Node initialization done\n");
 			}
-			else if(mess -> type == RESPONSE || mess -> type == REPLICATE || FIND) {
+			else if(mess -> type == RESPONSE || mess -> type == REPLICATE || mess -> type == FIND || mess -> type == SHUTDOWN) {
 				while(!pastry_overlay_api_in.add_to_queue(mess));
 			}
 		}
 
 	}
+}
+
+void Pastry_overlay :: shutdown() {
+
+	string msg = to_string(SHUTDOWN) + string("#");
+	for(int i = 0; i < l_size; i++) 
+		if(leaf_set[i] != 0 && leaf_set[i] != INT_MAX) sock_layer -> send_data(leaf_set[i],string(msg.c_str()));
+	for(int i = 0; i < max_rows; i++) {
+		for(int j = 0; j < max_cols; j++) 
+			if(route_table[i][j] != 0 && route_table[i][j] != INT_MAX) sock_layer -> send_data(route_table[i][j],string(msg.c_str()));
+	}
+	for(int i = 0; i < m_size; i++)
+		if(neighbour_set[i] != current_node_id && neighbour_set[i] != 0 && neighbour_set[i] != INT_MAX) 
+			sock_layer -> send_data(neighbour_set[i],string(msg.c_str()));
 }
 
 void Pastry_overlay :: initialize_table(int nodeid,std::string ip,int port) {
@@ -487,9 +498,9 @@ void Pastry_overlay :: display_table(int part) {
 	sprintf(format,"%%0%dX ",max_rows);
 
 	vector<int> nodes;
-	printf("\nCurrent Node\n");
-	printf("\n*************************************\n");
+	printf("\nCurrent Node \n");
 	printf(format,current_node_id);
+	printf("\n*************************************\n");
 	printf("\n");
 	
 	if(part & DLSET) {
